@@ -39,8 +39,8 @@ const projects = await getAllProjects()
                     <Image
                       src={project.data?.icon}
                       alt="icon"
-                      width={40}
-                      height={40}
+                      width={70}
+                      height={70}
                       class={cn(project.data.imageClass)}
                       densities={[1, 2]}
                       loading="lazy"
@@ -54,7 +54,10 @@ const projects = await getAllProjects()
                 >
                   {project.data.name}
                 </a>
-                <p class="pr-0 sm:pr-14 text-muted-foreground mb-3">{project.data.description}</p>
+                <p class="pr-0 sm:pr-14 text-muted-foreground mb-3 mr-3">{project.data.description}</p>
+
+                <br />
+                <hr />
                 <div class="flex flex-col sm:flex-row gap-4 sm:gap-0 items-start sm:items-center justify-between sm:h-14">
                   <div class="flex gap-4 ">
                     <div class="flex items-center py-1.5 gap-3">

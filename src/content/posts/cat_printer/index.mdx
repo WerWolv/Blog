@@ -1,0 +1,170 @@
+---
+title: Thermal Printer BLE Protocol reverse engineering
+description: |
+  Reverse Engineering of the chinese iPrint app in order to talk to a Thermal Printer through Python over Bluetooth Low Energy
+cover: assets/cover.png
+author: WerWolv
+pubDate: 2021-04-30
+tags: ['Java', 'Python', 'BLE']
+license: 'CC-BY-NC-SA-4.0'
+---
+
+## Overview
+
+Thermal Printers are amazing for quickly printing out notes and todo lists since all they need is paper and some power. Printing is done by heating up the paper to color it black without needing any sort of ink that can run out. Unfortunately the model I got here only supports Bluetooth and the only official way to talk to it is through the ~~horrible~~ [iPrint](https://apkplz.net/app/com.frogtosea.smartprint) app.
+
+## Hardware
+
+Two weeks ago I ordered this thermal printer from [AliExpress](https://www.aliexpress.com/item/1005001666191411.html) hoping it would be the same as the one a friend got a while ago. Their printer has an STM32 MCU on it as well as a super nicely labeled UART header. Unfortunately for me, mine has some weird ass controller with no information online whatsoever and no UART or USB support. Great.
+
+| PCB Front                          | PCB Back                         |
+| ---------------------------------- | -------------------------------- |
+| ![PCB Front](assets/pcb_front.png) | ![PCB Back](assets/pcb_back.png) |
+
+| #   | Description                                                                           |
+| --- | ------------------------------------------------------------------------------------- |
+| A   | LDO to generate lower voltages required to drive for example the MCU                  |
+| B   | H-Bridge which controls the stepper motor of the printer                              |
+| C   | Step-up 2-cell Lithium Battery charger IC                                             |
+| D   | Weird ass MCU apparently nobody has ever heard of. It has an integrated bluetooth PHY |
+
+## BLE
+
+The only thing it does have is Bluetooth, or rather BLE. And the only way to talk to it is through a proprietary, shady, chinese app you have to download from some apk mirroring site because it's not even on the Play Store. It's called [iPrint](https://apkplz.net/app/com.frogtosea.smartprint) and has some basic functions to let you print out photos, text and some weird built-in frames and images.
+
+But it works pretty well :)
+
+![Test Print](assets/test_print.png)
+
+The main problem though is, having to use my Phone to print those notes isn't really all that great. Being able to quickly generate notes on the computer and printing them out would be so much more useful! Unfortunately nobody's done anything like this for that printer already so I guess I have to do it.
+
+## Reverse Engineering the app
+
+Since the App is the only thing that really has the ability to talk to the printer, let's start there.
+There's probably better ways to do this but I simply googled for `apk decompiler`, clicked on the first link and used that. It's a site called [javadecompilers.com](http://www.javadecompilers.com/apk) where I uploaded the iprint apk I downloaded earlier and after a few minutes the fully decompiled project was ready to be downloaded.
+
+At first I was shocked, the decompiled code was almost 200MB with 14k files but looking into the project a bit I noticed, most of them are just libraries they bundled into the app. Looking around a bit I found a promissing looking file called `com.blueUtils.PrintDataUtils.java`. In there are multiple functions that format provided input data into a byte array of "cmds" that will end up being sent to the printer over BLE.
+
+Let's first take a look at a function named `public byte[] eachLinePixToCmdB(byte[] bArr, int i, int i2)`. The decompilation isn't that great but there are multiple similar looking sections in there like this one:
+
+```java
+LogUtils.m1960e(Integer.valueOf(getEneragy()));
+bArr2 = new byte[((i7 * length) + BluetoothOrder.print_text.length + 9 + 10)];
+byte[] bArr5 = new byte[10];
+bArr5[0] = 81;
+bArr5[1] = 120;
+bArr5[2] = -81;
+bArr5[3] = 0;
+bArr5[4] = 2;
+bArr5[5] = 0;
+bArr5[6] = ConvertUtils.hexString2Bytes(Integer.toHexString(getEneragy()))[1];
+bArr5[7] = ConvertUtils.hexString2Bytes(Integer.toHexString(getEneragy()))[0];
+bArr5[8] = BluetoothOrder.calcCrc8(bArr5, 6, 2);
+bArr5[9] = -1;
+System.arraycopy(bArr5, 0, bArr2, 0, bArr5.length);
+this.packageLength += 10;
+```
+
+(There's gramatical and logical errors in the naming of functions everywhere. The developers absolutely weren't native english speaking.)
+
+Since Java doesn't really know unsigned variables, there's some negative values in there. However they can simply be converted to unsigned representation by using the 2's completement rules.
+Comparing all the sections that look like this, I concluded that the command protocol must look something like this:
+
+```rust
+Magic0:         0x51
+Magic1:         0x78
+CommandID:      0x00 - 0xFF
+AlwaysZero0:    0x00
+Data Size:      0x00 - 0xFF
+AlwaysZero1:    0x00
+Data:           [ Array of bytes with the length provided before, Big Endian ]
+DataCRC8:       0x00 - 0xFF
+Magic4:         0xFF
+```
+
+Of course, after I reverse engineered this all manually, I randomly stumbled over `BluetoothOrder.java`.
+![](https://i.imgur.com/n6iqMt6.png)
+A list of hardcoded commands used by the app as well as the CRC8 look up table used for the calculation. The table is pretty much the default one though.
+With this table I could conclude the following list of command IDs:
+
+```rust
+RetractPaper:     0xA0
+FeedPaper:        0xA1
+DrawBitmap:       0xA2
+SetDrawingMode:   0xBE
+SetEnergyLevel:   0xAF
+SetQuality:       0xA4
+```
+
+Perfect, everything that's needed to start talking to the printer!
+
+## Talking to the printer
+
+It took me a while to find a library (and language) that supported talking to BLE on Windows but ultimately I ended up using Python with the [Bleak library](https://github.com/hbldh/bleak). Looking at their example suggested I need to provide the device's bluetooth mac address as well as some UUID. I ended up reading through some of the BLE specs and found out that this UUID was an identifier for a so called Characteristic the printer provides. It's basically like specifying what port to send the data to for the printer to properly receive it.
+Finding the device ID was pretty simple, I downloaded some bluetooth analysis app from the Play Store and the mac address was displayed there right away. But how on earth do I find the characteristic UUID? My first thought was to look at the app again since it needs to be hardcoded there somewhere. Searching for UUIDs in general yielded a lot of results so I quickly stopped there.
+Instead I downloaded a free app from the Microsoft Store (lol) called [Bluetooth LE Lab](https://www.microsoft.com/en-us/p/bluetooth-le-lab/9n6jd37gwzc8?activetab=pivot:overviewtab) which was amazingly helpful for this. Selecting the device brings you to this screen which displays all Services and Characteristics of the device.
+[](https://i.imgur.com/FkNot6R.png)
+
+There's two `WriteWithoutResponse`, two `Notify`, one `Indicate` and one `Read, Write` characteristic. Since they have commands in their app that read data from the printer, the only one that really worked was the `Read, Write` one: `0000AE10-0000-1000-8000-00805F9B34FB`. The app even allowed me to directly send data to the device.
+I converted the `paper` command array found in the app to hexadecimal and 🎉, paper was ejected from the printer!
+
+### Python reimplementation
+
+Now that I knew that the commands worked, I started to reimplement it in Python. It took a while to get the whole thing installed on Windows and to get it to talk to the computer's Bluetooth module but in the end I got the same command working from Python.
+
+#### Message creation
+
+```python
+crc8_table = [
+    0x00, 0x07, 0x0e, 0x09, ... # Rest of array
+]
+
+def crc8(data):
+    crc = 0
+    for byte in data:
+        crc = crc8_table[(crc ^ byte) & 0xFF]
+    return crc & 0xFF
+
+def formatMessage(command, data):
+    data = [ 0x51, 0x78 ] + [command] + [0x00] + [len(data)] + [0x00] + data + [crc8(data)] + [0xFF]
+    return data
+```
+
+#### Feeding paper
+
+```python
+PrinterAddress = "93:2A:BB:C4:95:8D"
+PrinterCharacteristic = "0000AE01-0000-1000-8000-00805F9B34FB"
+
+FeedPaper = 0xA1
+async def feedPaper():
+  device = await BleakScanner.find_device_by_address(PrinterAddress, timeout=20.0)
+  async with BleakClient(device) as client:
+    await client.write_gatt_char(PrinterCharacteristic, formatMessage(FeedPaper, [0x70, 0x00]))
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(feedPaper())
+```
+
+#### Drawing things
+
+Looking through the App once again, I noticed this printer doesn't really support printing text directly. Instead what they do is make the app render whatever the user enters using HTML, render that to a bitmap and then send that bitmap to the printer. The `DrawBitmap` command `0xA2` takes an array of bytes where each bit represents one pixel in the image. If the bit is a 1, the printer will burn the paper at that position, if it's a 0 it won't. I found this out by simply sending some patterns to the printer. `0xFF` lead to a opaque line, `0xAA` lead to every second pixel to be drawn. Knowing that, I wrote a quick function that loaded in a image using the PIL library and turned it into a byte array line-by-line. To print a full image now though, we need to print multiple lines. This is done by drawing a single line and then advancing one step using the `FeedPaper` command `0xA1` and so on. After many attemps I finally managed to get it right.
+
+## Result
+
+The whole project took me about 6 hours spread out over the course of two days. When I first got the printer and took it apart I was really disappointed to not find any UART or USB interface but now I'm really happy I had to use BLE for it. It made the whole thing really fun and easy to use now since it doesn't need any extra hardware (besides a computer with Bluetooth support). Finally though, the result. Fucking worth it.
+
+import printing_video from 'assets/printing.mp4'
+
+<video controls width="100%">
+  <source src={printing_video} type="video/mp4" />
+</video>
+
+<br />I published all my example code here on my GitHub: https://github.com/WerWolv/PythonCatPrinter
+![](https://opengraph.githubassets.com/24e9a9abd03209b1a961763ca27e24d036d52dfc78827d19f975abf90ecc7b44/WerWolv/PythonCatPrinter)
+
+<br />
+<br />
+There's still a ton to do though. Printing right now is really slow because sending data too fast causes the Printer to jam up and refuses
+to do anything anymore until it's restarted. The App does have some sort of compression for the data but I did not yet manage to figure out
+how it works. The next step probably will be to get text rendering and printing to work. I'll update this blog once I know more.

@@ -75,13 +75,13 @@ export const SOCIAL_LINKS: SocialLink[] = [
 ]
 
 /**
- * SkillsShowcase 配置接口 / SkillsShowcase configuration type
- * @property {boolean} SKILLS_ENABLED  - 是否启用SkillsShowcase功能 / Whether to enable SkillsShowcase features
- * @property {Object} SKILLS_DATA - 技能展示数据 / Skills showcase data
- * @property {string} SKILLS_DATA.direction - 技能展示方向 / Skills showcase direction
- * @property {Object} SKILLS_DATA.skills - 技能展示数据 / Skills showcase data
- * @property {string} SKILLS_DATA.skills.icon - 技能图标 / Skills icon
- * @property {string} SKILLS_DATA.skills.name - 技能名称 / Skills name
+ * SkillsShowcase / SkillsShowcase configuration type
+ * @property {boolean} SKILLS_ENABLED  - Whether to enable SkillsShowcase features
+ * @property {Object} SKILLS_DATA - Skills showcase data
+ * @property {string} SKILLS_DATA.direction - Skills showcase direction
+ * @property {Object} SKILLS_DATA.skills - Skills showcase data
+ * @property {string} SKILLS_DATA.skills.icon - Skills icon
+ * @property {string} SKILLS_DATA.skills.name - Skills name
  * get icon https://icon-sets.iconify.design/
  */
 export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
@@ -191,11 +191,11 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
 }
 
 /**
- * GitHub配置 / GitHub configuration
+ * GitHub configuration
  *
- * @property {boolean} ENABLED - 是否启用GitHub功能 / Whether to enable GitHub features
- * @property {string} GITHUB_USERNAME - GITHUB用户名 / GitHub username
- * @property {boolean} TOOLTIP_ENABLED - 是否开启Tooltip功能 / Whether to enable Github Tooltip features
+ * @property {boolean} ENABLED - Whether to enable GitHub features
+ * @property {string} GITHUB_USERNAME - GitHub username
+ * @property {boolean} TOOLTIP_ENABLED - Whether to enable Github Tooltip features
  */
 
 export const GITHUB_CONFIG: GithubConfig = {
@@ -211,8 +211,8 @@ export const POSTS_CONFIG: PostConfig = {
   introduce: 'All my posts about various subjects that interest me',
   author: 'Dnzzk2',
   homePageConfig: {
-    size: 2,
-    type: 'time-line',
+    size: 5,
+    type: 'image',
   },
   postPageConfig: {
     size: 10,
@@ -244,8 +244,8 @@ export const COMMENT_CONFIG: CommentConfig = {
     clientID: import.meta.env.PUBLIC_GITHUB_CLIENT_ID,
     clientSecret: import.meta.env.PUBLIC_GITHUB_CLIENT_SECRET,
     repo: 'gitalk-comment',
-    owner: 'Dnzzk2',
-    admin: ['Dnzzk2'],
+    owner: 'WerWolv',
+    admin: ['WerWolv'],
     language: 'en-US',
     perPage: 5,
     pagerDirection: 'last',
@@ -263,8 +263,8 @@ export const TAGS_CONFIG: TagsConfig = {
 
 export const PROJECTS_CONFIG: ProjectConfig = {
   title: 'Projects',
-  description: 'The examples of my projects.',
-  introduce: 'The examples of my projects.',
+  description: 'The things I spend my time on',
+  introduce: 'The things I spend my time on',
 }
 
 export const PHOTOS_CONFIG: PhotosConfig = {
@@ -275,7 +275,7 @@ export const PHOTOS_CONFIG: PhotosConfig = {
 
 export const ANALYTICS_CONFIG: AnalyticsConfig = {
   vercount: {
-    enabled: true,
+    enabled: false,
   },
   umami: {
     enabled: false,

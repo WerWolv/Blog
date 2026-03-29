@@ -49,6 +49,7 @@ const projects = defineCollection({
       star: z.number(),
       fork: z.number(),
       draft: z.boolean().default(false),
+      order: z.number().default(9999),
     }),
 })
 

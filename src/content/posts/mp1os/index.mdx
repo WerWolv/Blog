@@ -1,0 +1,543 @@
+---
+title: Getting a home-made OS running on a STM32MP1 based development board
+description: |
+  A low level analysis of how a STM32MP1 board loads its bootloaders and sets up peripherals found on the PCB. Road to a custom OS.
+cover: assets/cover.png
+author: WerWolv
+pubDate: 2020-07-24
+tags: ['Bare Metal', 'ARM', 'STM32']
+license: 'CC-BY-NC-SA-4.0'
+---
+
+# Overview
+
+The STM32MP157C-DK2 is one of the latest dev boards by ST Microelectronics. It features a STM32MP1 SoC with two ARM A7 cores and one M4 co-processor core. The intended way of using this SoC according to STM is to run their custom, pre-built Linux distribution, toolchain, SDK and proprietary flash tools. Their [wiki](https://www.st.com/content/st_com/en/wiki/wiki-portal.html) does a great job at not telling you a lot of important details because STM's linux distro "takes care of that".
+This post however deals with all the dirty details about how the entire boot process works and how to bring the DK2 board into a state where a custom kernel can be loaded.
+
+# Power on
+
+When the board gets plugged in, the first thing happening is the STPMIC1 power management IC initializing it's output voltages to the default settings. According to its [datasheet](https://www.st.com/resource/en/datasheet/stpmic1.pdf) and the [board schematics](https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group0/36/8e/ea/7a/ca/ca/4b/e4/mb1272-dk2-c01_schematic/files/MB1272-DK2-C01_Schematic.pdf/jcr:content/translations/en.MB1272-DK2-C01_Schematic.pdf), this means the core gets powered with 1.2V, the DDR RAM with 1.1V and the rest of the SoC peripherals with 3.3V.
+
+Once the voltage has stabilized, the bootROM starts running and determines where to boot from by reading either the BOOT0 and BOOT1 pin or a value burnt into the OTP efuses. Possible boot sources are NAND and NOR flash, eMMC, Serial and SD cards. The DK2 uses the SD card by default as no other sources can be found on the board.
+
+# SD card content
+
+## GPT
+
+The bootROM now tries to boot from the SD card. The SD card must contain a GPT containing two partitions named `fsbl1` and `fsbl2`. These are two, hopefully identical, copies of the First Stage bootloader the bootROM will later execute.
+
+## FSBL
+
+For the bootROM to recognize and load the fsbl (or in fact any binary), a special format is used. It is described as the [STM32 header for binary files](https://wiki.st.com/stm32mpu/wiki/STM32_header_for_binary_files) and consists of a 256 bytes long header followed by the binary data to load.
+
+![STM32 header](https://wiki.st.com/stm32mpu/nsfr_img_auth.php/4/4c/STM32_header.png)
+
+The following code is a python script which generates a correct header for any given fsbl binary:
+
+```python
+header = struct.pack("<4sQQQQQQQQIIIIIIIIIIQQQQQQQQ83xb",
+    b"STM\x32",                                       # Header magic
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   # ECDSA signature, unsigned here
+    sum(payload),                                     # Checksum of payload, sum of all bytes
+    0x00010000,                                       # Header version 1.0
+    len(payload),                                     # Length of payload
+    0x2FFC0000 + 0x2400 + 0x100,                      # Entrypoint address. SYSRAM + 0x2400 (BROM data) + 0x100 (header)
+    0x00,                                             # Reserved
+    0x2FFC0000 + 0x2400 + 0x100,                      # Load address of image, unused
+    0x00,                                             # Reserved
+    0x00,                                             # Image version
+    0x01,                                             # Option flags, disable signature verification
+    0x01,                                             # ECDSA algorithm set to P-256 NIST, unused
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   # ECDSA signature, unsigned here
+    0x00                                              # Binary type: U-Boot
+    )
+```
+
+Some information about the header:
+
+- Since the SoC is not in production mode currently, the ECDSA signature is optional and not used here (bit 0 in options flag set)
+- The checksum is calculated by summing up all bytes in the payload mod `0xFFFF'FFFF` to get a 32 bit value
+- The binary always gets loaded to address `0x2FFC'2400`, no matter what load address was specified in the header.
+  - The STM32MP1's so called `SYSRAM` starts at address `0x2FFC'0000`
+  - The bootROM will use the first `0x2400` bytes of the `SYSRAM` for its own data segment. Besides the bootROM's execution data, it also stores multiple structs in there containing various boot information such as boot device, retries, etc.
+- The entry point value is the 32 bit address the bootROM will jump to if validation succeeded.
+  - For this binary, execution should start at the beginning of the `.text` segment which is located directly after the header. Therefore the entry point is at `0x2FFC0000 + 0x2400 + 0x100` (`addressof(SYSRAM) + sizeof(.data_bootROM) + sizeof(STM32Header)`)
+
+Once the image was verified, copied and the bootROM jumped to the start of the fsbl's .text section, the real fun starts.
+Important to note is that the bootROM does not have a proper ELF loader or anything. The binary is simply `memcpy`'d into `SYSRAM`. Therefore things like `.bss` segments will not be expanded automatically. These sections need to be expanded statically beforehand to work properly.
+
+The only setup to do now is to update the `SP` to point to `0x3000'0000`, the end of `SYSRAM`.
+
+## Update 9. August 2020
+
+### Debugging with OpenOCD
+
+For the longest time of this project my testing cycle looked as follows:
+
+```
+  - Writing code
+  - Compiling source code with make
+  - Generating a MBR SD card image with genimage
+  - Downloading that image from my build server
+  - Flashing it to an SD card using balenaEtcher
+  - Inserting the SD card into the board
+  - Resetting the board
+  - Hoping that one of the two LEDs used for debugging would light up
+```
+
+This process usually took between 2 and 3 minutes and the only way to debug things was extracting two bits of information at the time using the two on-board LEDs. This time is luckily over thanks to the amazing [OpenOCD](https://github.com/ntfreak/openocd) project. OpenOCD is an open source embedded debugging software providing the ability to interface with many different debugging interfaces such as JTAG and ST-Link. Additionally it integrates a gdb-server which can be used control, program and debug the connected SoC though GDB. This ultimately allows for one click building, flashing and debugging right within VSCode:
+
+![VSCode GDB debugging](assets/vscode_debugging.png)
+
+Getting OpenOCD to run properly is really easy thanks to a bunch of pre-made scripts.
+
+```sh
+  $ openocd -f $OPENOCD_SCRIPTS/board/stm32mp15x_dk2.cfg -c "gdb_flash_program enable"
+```
+
+The first part is the debug config for the dk2 board. When using a custom board with an MP1 on board, `-f $OPENOCD_SCRIPTS/target/stm32mp15x.cfg -f $OPENOCD_SCRIPTS/interface/stlink-dap.cfg` can be used instead. At the time of writing this, they are not in the latest release and require OpenOCD to be built from sources (or using the AUR package `openocd-git`). `-c "gdb_flash_program enable"` is necessary for gdb to be able to flash the executable to the board.
+
+Using the `Native Debug` extension for VSCode, the following task and launch config can be used to directly load the fsbl ELF executable into SYSRAM, executing it and start debugging:
+
+```json
+// launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "type": "gdb",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "target": "${workspaceRoot}/fsbl/build/fsbl.elf",
+      "gdbpath": "/bin/arm-none-eabi-gdb",
+      "preLaunchTask": "build", // Before debugging, build changes
+      "autorun": [
+        "target remote tcp:localhost:3333", // Connect to OpenOCD's gdb-server
+        "load ./fsbl/build/fsbl.elf", // Flash fsbl.elf to target
+        "file ./fsbl/build/fsbl.elf", // Load symbols from fsbl.elf
+        "b main", // Set a breakpoint at the start of main()
+        "j _start" // Jump to _start, the beginning of the crt0
+      ]
+    }
+  ]
+}
+```
+
+```json
+// tasks.json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell", // Run a command
+      "command": "make", // Run make
+      "problemMatcher": []
+    }
+  ]
+}
+```
+
+All of this allows for instant loading of your changes without having to go through the SD card at all. Additionally variables can be inspected, breakpoints set, code stepped, the strack trace inspected and more. It cuts the dev cycle from 2 to 3 minutes down to 20 seconds with tons of cool extra features.
+
+### LEDs - Initializing GPIOs
+
+The easiest way to indicate a sign of life is always to light up an LED. The STM32MP157C-DK2 conveniently has two user LEDs on board, a blue one and an orange one. Checking the board schematics shows, they are connected to GPIO Pin D11 and H7 respectively.
+
+![LEDs](assets/schematic_leds.png)
+![Orange LED](assets/schematic_led_y.png)
+![Blue LED](assets/schematic_led_b.png)
+
+To set up the GPIO pins now, the following steps need to be done.
+
+First, the GPIO clock needs to be enabled. This is done by setting the respective bit in the right `RCC_MP_AXXXENSETR` register. The reference manual shows, RCC_MP_AHB4ENSETR contains all the bits for the GPIOA to GPIOK clocks.
+
+Next, the GPIO pins need to be configured. The relevant registers for this are GPIOX_MODER, GPIOX_OTYPER, GPIOX_OSPEEDR and GPIOX_PUPDR.
+
+**GPIOX_MODER** contains the mode of all pins in this port. Since the pin needs to be able to drive an LED, this should be set to Output mode.
+
+**GPIOX_OTYPER** contains the output type of that pin. It may be either Push-Pull or Open-Drain. Looking at the schematics once again, the LED's annode is connected to the GPIO pin and the cathode directly to ground.
+This means to light the LED up, a current needs to flow out of the GPIO pin, through the LED into ground. This can only be achieved using the Push-Pull configuration.
+
+**GPIOX_OSPEEDR** is the speed at which the pin needs to be able to respond. Higher values here will cause a higher current flow and possible reflections if the line is not properly matched. For an LED though, this all doesn't really matter so it can be safely set to Low or Medium speed.
+
+Finally **GPIOX_PUPDR** defines whether a pullup, pulldown or no resistor at all should be used. In Push-Pull mode, this is generally unwanted and should be set to no pullup.
+
+This finishes up the configuration of the GPIO pin. To make the LEDs light up now, the bit in the **GPIOX_ODR** register corresponding to that pin needs to be set to pull the pin to VDD voltage. And that's it!
+
+# What now?
+
+Code is being executed but it's running in a very limited environment right now.
+To get a kernel up and running, the things still necessary are the following:
+
+- Write an I2C driver to communicate with the STPMIC1 power management IC and increase the voltage delivered to the onboard DDR3 RAM.
+- Write a RAM interface driver to initialize and map the DDR3 RAM into memory.
+- Write an SDMMC interface driver and mount the SD card again
+- Use for example FATFs to load a SSBL from a FAT32 partition on the SD card.
+- Write a proper ELF loader to load and map the SSBL into the DDR RAM.
+- Write a SSBL that loads a kernel image from the SD card.
+- Write a kernel
+
+This blog post and list will be updated as I go along and finish more of the boot chain.
+The current progress can be found here: https://github.com/WerWolv/STM32MP1OS
+
+Update 20.08.2021: One of the professors of the University I'm on, emailed me and a friend about projects next year and asked if we wanted to work on a project including the STM32MP1 to possibly use it in the future to teach new students about low-level C, Embedded Linux and Asynchronous multiprocessing. This not only means we don't have to worry about getting a good project next year, it also means I can continue working on the same board during my Bachelor thesis which is absolutely amazing :D
+
+Update 22.01.2021: The project we ended up doing using this board was a demo application showcasing a hardware accelerated GUI running on the A7 Cores under Linux controlling a real-time, bare metal firmware running on the M4 coprocessor. The coprocessor is running an RTOS which uses a PID controller to regulate the height of a ball inside a tube using a ToF sensor to measure the ball's height and a fan to blow the ball up.
+Our professor just told us that we're getting an A for the work we've done using the STM32MP157C-DK2 and has high hopes that we're doing as well during the bachelor thesis. During the bachelor thesis we'll be developing a modular development board for students to replace the current (old and incredibly large and heavy) development boards for Embedded systems, Linux and Android classes as well as FPGA/SoC design in VHDL class. This is going to be amazing :)
+
+<br />
+<br />
+<hr />
+<br />
+<br />
+
+# Reverse Engineering Notes
+
+These are the notes I took while reading the wiki, reverse engineering u-boot, st's drivers and the DK2's schematic. Everything in all it's unfinished and messy glory. There is some more information here about u-boot and how u-boot finds and loads the linux kernel, however this has not much to do with the bare metal OS mentioned above. It is left here in the hope that it helps people understand the thought processes I went though when looking at the official sd card image, u-boot, the reference manual and the schematics.
+
+## Boot process
+
+- MBR
+  - First (actually fourth) partition marked as active / bootable, this is the rootfs
+  - CHS address : `0x001E'0D00`
+    - H Head: 30
+    - S Sector: 13
+    - C Cylinder: 0
+    - LBA = (C _ HPC + H) _ SPT + (S - 1) = (0 _ 256 + 30) _ 63 + (13 - 1) = 30 \* 63 + 12 = 1902
+      - HPC: Heads per Cylinder = 256
+      - SPT: Sectors per Track = 63
+      - Block / Sector Size = 512
+    - Address of first partition: 1902 \* 512 = `0x000E'DC00`
+- GPT
+  - First EFI Partition Entry called `fsbl1` = `"First Stage Bootloader Copy 1`
+    - FirstLBA: `0x22` -> 0x22 \* 512 = 0x4400 -> Start of first stage bootloader with custom STM32 header
+  - Second EFI Partition Entry called `fsbl2` = `"First Stage Bootloader Copy 2"`
+    - FirstLBA: `0xB7` -> 0xB7 \* 512 = 0x16E00 -> Start of safety copy of the first stage bootloader
+- STM32 FSBL (SPL)
+  - Loaded into SYSRAM at address `0x2FFC'2400`
+  - Header specifies entry point at `0x2FFC'2400` -> `SYSRAM + 0x100`
+    - STM32 header is exactly `0x100` bytes long, so execution starts off at the beginning of the binary right after the header
+  - Header specifies U-boot FSBL
+  - STM32MP157C-DK2 [Schematics](https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group0/36/8e/ea/7a/ca/ca/4b/e4/mb1272-dk2-c01_schematic/files/MB1272-DK2-C01_Schematic.pdf/jcr:content/translations/en.MB1272-DK2-C01_Schematic.pdf)
+  - Enables BUCK3 of the STPMIC1 Power Management IC over a [I2C u-boot driver](https://github.com/u-boot/u-boot/blob/9a8942b53d57149754e0dfc975e0d92d1afd4087/drivers/power/pmic/stpmic1.c#L118)
+    - This down steps the 5V from the USB-C socket and applies it to the VDD net
+      - Applies VDD to PDR_ON and PDR_ON_CORE (Power On Reset Enable)
+      - Powers the XTAL oscillator
+      - Powers up the STM32MP1's peripheral interfaces
+      - Brings up the DDR RAM
+  - Chooses U-boot's MMC loader to load the next stage of U-Boot into the DDR RAM at `0xC020'0000` [ref](https://github.com/u-boot/u-boot/blob/5f09f9af3cc335fe6a74c031cfa0b1d8bdf4b9db/include/configs/stm32mp1.h#L52-L57)
+    - [Boot target device](https://github.com/u-boot/u-boot/blob/5f09f9af3cc335fe6a74c031cfa0b1d8bdf4b9db/include/configs/stm32mp1.h#L115)
+- SSBL (U-Boot)
+  - [Voltage Regulators](https://github.com/u-boot/u-boot/blob/c2279d784e35fa25ee3a9fa28a74a1ba545f8c1e/board/st/stm32mp1/board.c#L43)
+    - Sets the VDD_DDR voltage to 1.35V for DDR3 RAM, 1.25V for LPDDR RAM in 32 bit mode or 1.2V for LPDDR in 16 bit mode (BUCK2)
+    - Sets VTT_DDR voltage to 1.8V (LDO3)
+  - [Enable UART](https://github.com/u-boot/u-boot/blob/c2279d784e35fa25ee3a9fa28a74a1ba545f8c1e/board/st/stm32mp1/board.c#L16)
+    - Only for debug mode
+    - Enables GPIOG clocks (UART4_TX on PG11)
+  - Checks the device specified [here](https://github.com/u-boot/u-boot/blob/master/configs/stm32mp15_basic_defconfig#L60) with [id](https://github.com/u-boot/u-boot/blob/master/configs/stm32mp15_basic_defconfig#L61) for a suitable partition
+    - They specify `auto` as the partition so it looks for the first bootable partition and if there's none, it falls back to the first valid partiton. ([reference](https://github.com/u-boot/u-boot/blob/c2279d784e35fa25ee3a9fa28a74a1ba545f8c1e/disk/part.c#L583-L593))
+    - Loads configuration from `rootfs:/boot/extlinux/extlinux.conf` found [here](https://github.com/buildroot/buildroot/blob/master/board/stmicroelectronics/stm32mp157c-dk2/overlay/boot/extlinux/extlinux.conf)
+      - Added [here](https://github.com/u-boot/u-boot/blob/5f09f9af3cc335fe6a74c031cfa0b1d8bdf4b9db/include/configs/stm32mp1.h#L162)
+      - Specified [here](https://github.com/u-boot/u-boot/blob/82679624f9aa6d1be733c46f3555d5166b6f5b72/include/config_distro_bootcmd.h#L425)
+      - It parses this file to figure out where the zImage and dtb file is located
+    - Loads the Kernel from `rootfs:/boot/zImage`
+      - Loaded to `0xC200'0000` (Into DDR RAM going from `0xC000'0000` to `0xDFFF'FFFF`)
+        - Configuration found [here](https://github.com/u-boot/u-boot/blob/5f09f9af3cc335fe6a74c031cfa0b1d8bdf4b9db/include/configs/stm32mp1.h#L149)
+    - Loads the Device Tree Blob from `rootfs:/boot/stm32mp157c-dk2.dtb`
+  - Jumps to Kernel
+    - Cleanup
+    - Switch to EL2
+    - [reference](https://github.com/u-boot/u-boot/blob/c2279d784e35fa25ee3a9fa28a74a1ba545f8c1e/arch/arm/lib/spl.c#L54)
+
+- [Drivers](https://github.com/STMicroelectronics/arm-trusted-firmware/tree/v2.2-stm32mp/drivers/st)
+
+## Serial Console boot Dump
+
+```
+U-Boot 2020.04 (Jul 03 2020 - 20:11:15 +0200)
+
+CPU: STM32MP157CAC Rev.B
+Model: STMicroelectronics STM32MP157C-DK2 Discovery Board
+Board: stm32mp1 in basic mode (st,stm32mp157c-dk2)
+Board: MB1272 Var2 Rev.C-01
+DRAM:  512 MiB
+Clocks:
+- MPU : 650 MHz
+- MCU : 208.878 MHz
+- AXI : 266.500 MHz
+- PER : 24 MHz
+- DDR : 533 MHz
+NAND:  0 MiB
+MMC:   STM32 SDMMC2: 0
+Loading Environment from EXT4... OK
+In:    serial
+Out:   serial
+Err:   serial
+****************************************************
+*       WARNING 1.5mA power supply detected        *
+*     Current too low, use a 3A power supply!      *
+****************************************************
+
+Net:   eth0: ethernet@5800a000
+Hit any key to stop autoboot:  0
+Boot over mmc0!
+switch to partitions #0, OK
+mmc0 is current device
+Scanning mmc 0:4...
+Found /boot/extlinux/extlinux.conf
+Retrieving file: /boot/extlinux/extlinux.conf
+131 bytes read in 22 ms (4.9 KiB/s)
+1:      stm32mp157c-dk2-buildroot
+Retrieving file: /boot/zImage
+4171640 bytes read in 202 ms (19.7 MiB/s)
+append: root=/dev/mmcblk0p4 rootwait
+Retrieving file: /boot/stm32mp157c-dk2.dtb
+49532 bytes read in 24 ms (2 MiB/s)
+## Flattened Device Tree blob at c4000000
+   Booting using the fdt blob at 0xc4000000
+   Loading Device Tree to cfff0000, end cffff17b ... OK
+
+Starting kernel ...
+
+[    0.000000] Booting Linux on physical CPU 0x0
+[    0.000000] Linux version 5.7.1 (werwolv@werwolv-vmwarevirtualplatform) (gcc version 10.1.0 (Buildroot 2020.08-git-00490-gf50086e59f), GNU ld (GNU Binutils) 2.33.1) #1 SMP PREEMPT Fri Jul 3 18:44:10 CEST 2020
+[    0.000000] CPU: ARMv7 Processor [410fc075] revision 5 (ARMv7), cr=10c5387d
+[    0.000000] CPU: div instructions available: patching division code
+[    0.000000] CPU: PIPT / VIPT nonaliasing data cache, VIPT aliasing instruction cache
+[    0.000000] OF: fdt: Machine model: STMicroelectronics STM32MP157C-DK2 Discovery Board
+[    0.000000] Memory policy: Data cache writealloc
+[    0.000000] Reserved memory: created DMA memory pool at 0x10000000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node mcuram2@10000000, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x10040000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node vdev0vring0@10040000, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x10041000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node vdev0vring1@10041000, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x10042000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node vdev0buffer@10042000, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x30000000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node mcuram@30000000, compatible id shared-dma-pool
+[    0.000000] Reserved memory: created DMA memory pool at 0x38000000, size 0 MiB
+[    0.000000] OF: reserved mem: initialized node retram@38000000, compatible id shared-dma-pool
+[    0.000000] cma: Reserved 128 MiB at 0xd8000000
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv1.0 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: Trusted OS migration not required
+[    0.000000] psci: SMC Calling Convention v1.0
+[    0.000000] percpu: Embedded 15 pages/cpu s30028 r8192 d23220 u61440
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 113664
+[    0.000000] Kernel command line: root=/dev/mmcblk0p4 rootwait
+[    0.000000] Dentry cache hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 32768 (order: 5, 131072 bytes, linear)
+[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.000000] Memory: 313508K/458752K available (6144K kernel code, 188K rwdata, 1540K rodata, 1024K init, 171K bss, 14172K reserved, 131072K cma-reserved, 0K highmem)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu:     RCU restricting CPUs from NR_CPUS=4 to nr_cpu_ids=2.
+[    0.000000]  Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 10 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.000000] NR_IRQS: 16, nr_irqs: 16, preallocated irqs: 16
+[    0.000000] random: get_random_bytes called from start_kernel+0x320/0x4b0 with crng_init=0
+[    0.000000] arch_timer: cp15 timer(s) running at 24.00MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+[    0.000008] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+[    0.000024] Switching to timer-based delay loop, resolution 41ns
+[    0.000806] Console: colour dummy device 80x30
+[    0.001850] printk: console [tty0] enabled
+[    0.001905] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=240000)
+[    0.001954] pid_max: default: 32768 minimum: 301
+[    0.002157] Mount-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+[    0.002202] Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+[    0.003023] CPU: Testing write buffer coherency: ok
+[    0.003373] CPU0: update cpu_capacity 1024
+[    0.003412] CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+[    0.004120] Setting up static identity map for 0xc0100000 - 0xc0100060
+[    0.004303] rcu: Hierarchical SRCU implementation.
+[    0.004743] smp: Bringing up secondary CPUs ...
+[    0.005409] CPU1: update cpu_capacity 1024
+[    0.005420] CPU1: thread -1, cpu 1, socket 0, mpidr 80000001
+[    0.005587] smp: Brought up 1 node, 2 CPUs
+[    0.005663] SMP: Total of 2 processors activated (96.00 BogoMIPS).
+[    0.005689] CPU: All CPU(s) started in SVC mode.
+[    0.006297] devtmpfs: initialized
+[    0.022241] VFP support v0.3: implementor 41 architecture 2 part 30 variant 7 rev 5
+[    0.022755] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604462750000 ns
+[    0.022825] futex hash table entries: 512 (order: 3, 32768 bytes, linear)
+[    0.028600] pinctrl core: initialized pinctrl subsystem
+[    0.029641] NET: Registered protocol family 16
+[    0.032494] DMA: preallocated 256 KiB pool for atomic coherent allocations
+[    0.039443] /soc/interrupt-controller@5000d000: bank0
+[    0.039494] /soc/interrupt-controller@5000d000: bank1
+[    0.039524] /soc/interrupt-controller@5000d000: bank2
+[    0.043618] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOA bank added
+[    0.044033] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOB bank added
+[    0.044387] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOC bank added
+[    0.044727] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOD bank added
+[    0.045067] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOE bank added
+[    0.045391] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOF bank added
+[    0.045727] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOG bank added
+[    0.046052] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOH bank added
+[    0.046403] stm32mp157-pinctrl soc:pin-controller@50002000: GPIOI bank added
+[    0.046513] stm32mp157-pinctrl soc:pin-controller@50002000: Pinctrl STM32 initialized
+[    0.047280] stm32mp157-pinctrl soc:pin-controller-z@54004000: GPIOZ bank added
+[    0.047335] stm32mp157-pinctrl soc:pin-controller-z@54004000: Pinctrl STM32 initialized
+[    0.058799] usbcore: registered new interface driver usbfs
+[    0.058906] usbcore: registered new interface driver hub
+[    0.059026] usbcore: registered new device driver usb
+[    0.059281] pps_core: LinuxPPS API ver. 1 registered
+[    0.059310] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.059368] PTP clock support registered
+[    0.059683] Advanced Linux Sound Architecture Driver Initialized.
+[    0.060887] clocksource: Switched to clocksource arch_sys_counter
+[    0.071787] NET: Registered protocol family 2
+[    0.072549] tcp_listen_portaddr_hash hash table entries: 512 (order: 0, 6144 bytes, linear)
+[    0.072626] TCP established hash table entries: 4096 (order: 2, 16384 bytes, linear)
+[    0.072718] TCP bind hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.072833] TCP: Hash tables configured (established 4096 bind 4096)
+[    0.072991] UDP hash table entries: 256 (order: 1, 8192 bytes, linear)
+[    0.073057] UDP-Lite hash table entries: 256 (order: 1, 8192 bytes, linear)
+[    0.073306] NET: Registered protocol family 1
+[    0.074665] workingset: timestamp_bits=30 max_order=17 bucket_order=0
+[    0.083817] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    0.083875] io scheduler mq-deadline registered
+[    0.083900] io scheduler kyber registered
+[    0.153081] STM32 USART driver initialized
+[    0.153532] stm32-usart 40010000.serial: IRQ index 1 not found
+[    0.153638] 40010000.serial: ttySTM0 at MMIO 0x40010000 (irq = 21, base_baud = 4000000) is a stm32-usart
+[    0.853240] printk: console [ttySTM0] enabled
+[    0.858169] stm32-usart 40010000.serial: rx dma alloc failed
+[    0.863329] stm32-usart 40010000.serial: interrupt mode used for rx (no dma)
+[    0.870383] stm32-usart 40010000.serial: tx dma alloc failed
+[    0.876091] stm32-usart 40010000.serial: interrupt mode used for tx (no dma)
+[    0.906704] random: fast init done
+[    0.908119] brd: module loaded
+[    0.912034] random: crng init done
+[    0.922703] loop: module loaded
+[    0.925951] libphy: Fixed MDIO Bus: probed
+[    0.928672] CAN device driver interface
+[    0.933588] stm32-dwmac 5800a000.ethernet: IRQ eth_wake_irq not found
+[    0.938970] stm32-dwmac 5800a000.ethernet: IRQ eth_lpi not found
+[    0.945195] stm32-dwmac 5800a000.ethernet: PTP uses main clock
+[    0.950903] stm32-dwmac 5800a000.ethernet: no reset control found
+[    0.960987] stm32-dwmac 5800a000.ethernet: User ID: 0x40, Synopsys ID: 0x42
+[    0.966577] stm32-dwmac 5800a000.ethernet:   DWMAC4/5
+[    0.971617] stm32-dwmac 5800a000.ethernet: DMA HW capability register supported
+[    0.978910] stm32-dwmac 5800a000.ethernet: RX Checksum Offload Engine supported
+[    0.986294] stm32-dwmac 5800a000.ethernet: TX Checksum insertion supported
+[    0.993201] stm32-dwmac 5800a000.ethernet: Wake-Up On Lan supported
+[    0.999541] stm32-dwmac 5800a000.ethernet: TSO supported
+[    1.004858] stm32-dwmac 5800a000.ethernet: Enable RX Mitigation via HW Watchdog Timer
+[    1.012753] stm32-dwmac 5800a000.ethernet: Enabled Flow TC (entries=2)
+[    1.019296] stm32-dwmac 5800a000.ethernet: TSO feature enabled
+[    1.025188] stm32-dwmac 5800a000.ethernet: Using 32 bits DMA width
+[    1.032121] libphy: stmmac: probed
+[    1.037644] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    1.042821] ehci-platform: EHCI generic platform driver
+[    1.048394] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    1.054322] ohci-platform: OHCI generic platform driver
+[    1.061849] stm32_rtc 5c004000.rtc: IRQ index 1 not found
+[    1.065839] stm32_rtc 5c004000.rtc: alarm can't wake up the system: -6
+[    1.073068] stm32_rtc 5c004000.rtc: registered as rtc0
+[    1.077625] stm32_rtc 5c004000.rtc: setting system clock to 2000-01-01T00:00:22 UTC (946684822)
+[    1.086648] stm32_rtc 5c004000.rtc: Date/Time must be initialized
+[    1.092543] stm32_rtc 5c004000.rtc: registered rev:1.2
+[    1.097792] i2c /dev entries driver
+[    1.121614] stm32f7-i2c 40012000.i2c: can't use DMA
+[    1.129085] i2c i2c-0: Added multiplexed i2c bus 1
+[    1.133191] edt_ft5x06 0-0038: supply vcc not found, using dummy regulator
+[    1.145478] input: generic ft5x06 (11) as /devices/platform/soc/40012000.i2c/i2c-0/0-0038/input/input0
+[    1.153880] stm32f7-i2c 40012000.i2c: STM32F7 I2C-0 bus adapter
+[    1.182290] stm32f7-i2c 5c002000.i2c: can't use DMA
+[    1.186728] stpmic1 2-0033: PMIC Chip Version: 0x10
+[    1.192618] BUCK1: supplied by regulator-dummy
+[    1.198691] BUCK2: supplied by regulator-dummy
+[    1.204581] BUCK3: supplied by regulator-dummy
+[    1.210553] BUCK4: supplied by regulator-dummy
+[    1.216397] LDO1: supplied by v3v3
+[    1.221977] LDO2: supplied by regulator-dummy
+[    1.227973] LDO3: supplied by vdd_ddr
+[    1.233149] LDO4: supplied by regulator-dummy
+[    1.236660] LDO5: supplied by regulator-dummy
+[    1.243498] LDO6: supplied by v3v3
+[    1.248521] VREF_DDR: supplied by regulator-dummy
+[    1.254543] BOOST: supplied by regulator-dummy
+[    1.258117] VBUS_OTG: supplied by bst_out
+[    1.262218] SW_OUT: supplied by bst_out
+[    1.267892] input: pmic_onkey as /devices/platform/soc/5c002000.i2c/i2c-2/2-0033/5c002000.i2c:stpmic@33:onkey/input/input1
+[    1.278222] stm32f7-i2c 5c002000.i2c: STM32F7 I2C-2 bus adapter
+[    1.286594] mmci-pl18x 58005000.sdmmc: Got CD GPIO
+[    1.290542] mmci-pl18x 58005000.sdmmc: mmc0: PL180 manf 53 rev1 at 0x58005000 irq 46,0 (pio)
+[    1.325558] sdhci: Secure Digital Host Controller Interface driver
+[    1.330375] sdhci: Copyright(c) Pierre Ossman
+[    1.335820] Synopsys Designware Multimedia Card Interface Driver
+[    1.341056] sdhci-pltfm: SDHCI platform and OF driver helper
+[    1.348863] usbcore: registered new interface driver usbhid
+[    1.353093] usbhid: USB HID core driver
+[    1.357656] stm32-ipcc 4c001000.mailbox: ipcc rev:1.0 enabled, 6 chans, proc 0
+[    1.364638] OF: Can't handle multiple dma-ranges with different offsets on node(/ahb)
+[    1.373179] OF: Can't handle multiple dma-ranges with different offsets on node(/ahb)
+[    1.380360] stm32-rproc 10000000.m4: wdg irq registered
+[    1.385339] stm32-rproc 10000000.m4: failed to get pdds
+[    1.390643] remoteproc remoteproc0: m4 is available
+[    1.398481] NET: Registered protocol family 10
+[    1.402931] Segment Routing with IPv6
+[    1.405275] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    1.412137] NET: Registered protocol family 17
+[    1.415651] can: controller area network core (rev 20170425 abi 9)
+[    1.422004] NET: Registered protocol family 29
+[    1.426323] can: raw protocol (rev 20170425)
+[    1.430606] can: broadcast manager protocol (rev 20170425 t)
+[    1.436392] can: netlink gateway (rev 20190810) max_hops=1
+[    1.442153] ThumbEE CPU extension supported.
+[    1.446136] Registering SWP/SWPB emulation handler
+[    1.452705] stm32-dma 48000000.dma-controller: STM32 DMA driver registered
+[    1.459654] stm32-dma 48001000.dma-controller: STM32 DMA driver registered
+[    1.466288] mmc0: new high speed SDHC card at address 0007
+[    1.468382] stm32-mdma 58000000.dma-controller: STM32 MDMA driver registered
+[    1.478263] mmcblk0: mmc0:0007 SD8GB 7.42 GiB
+[    1.478435] reg11: supplied by vdd
+[    1.485844] reg18: supplied by vdd
+[    1.489331] stm32-usbphyc 5a006000.usbphyc: registered rev:1.0
+[    1.500002] [drm] Supports vblank timestamp caching Rev 2 (21.10.2013).
+[    1.506266] [drm] Initialized stm 1.0.0 20170330 for 5a001000.display-controller on minor 0
+[    1.514711] GPT:Primary header thinks Alt. header is not at the end of the disk.
+[    1.521174] GPT:247694 != 15564799
+[    1.524492] GPT:Alternate GPT header not at the end of the disk.
+[    1.530542] GPT:247694 != 15564799
+[    1.533981] GPT: Use GNU Parted to correct GPT errors.
+[    1.539199]  mmcblk0: p1 p2 p3 p4
+[    1.993335] Console: switching to colour frame buffer device 60x50
+[    2.018194] stm32-display 5a001000.display-controller: fb0: stmdrmfb frame buffer device
+[    2.026848] dwc2 49000000.usb-otg: supply vusb_d not found, using dummy regulator
+[    2.034054] dwc2 49000000.usb-otg: supply vusb_a not found, using dummy regulator
+[    2.042060] dwc2 49000000.usb-otg: Configuration mismatch. dr_mode forced to host
+[    2.055120] usb33: supplied by vdd_usb
+[    2.058079] dwc2 49000000.usb-otg: DWC OTG Controller
+[    2.062719] dwc2 49000000.usb-otg: new USB bus registered, assigned bus number 1
+[    2.070208] dwc2 49000000.usb-otg: irq 42, io mem 0x49000000
+[    2.076920] hub 1-0:1.0: USB hub found
+[    2.079557] hub 1-0:1.0: 1 port detected
+[    2.084452] ehci-platform 5800d000.usbh-ehci: EHCI Host Controller
+[    2.089839] ehci-platform 5800d000.usbh-ehci: new USB bus registered, assigned bus number 2
+[    2.105114] ehci-platform 5800d000.usbh-ehci: irq 48, io mem 0x5800d000
+[    2.140919] ehci-platform 5800d000.usbh-ehci: USB 2.0 started, EHCI 1.00
+[    2.154036] hub 2-0:1.0: USB hub found
+[    2.159806] hub 2-0:1.0: 2 ports detected
+[    2.167463] ALSA device list:
+[    2.172483]   No soundcards found.
+[    2.182411] EXT4-fs (mmcblk0p4): INFO: recovery required on readonly filesystem
+[    2.195322] EXT4-fs (mmcblk0p4): write access will be enabled during recovery
+[    2.496866] EXT4-fs (mmcblk0p4): recovery complete
+[    2.508272] EXT4-fs (mmcblk0p4): mounted filesystem with ordered data mode. Opts: (null)
+[    2.522013] VFS: Mounted root (ext4 filesystem) readonly on device 179:4.
+[    2.534466] usb 2-1: new high-speed USB device number 2 using ehci-platform
+[    2.548092] devtmpfs: mounted
+[    2.555314] Freeing unused kernel memory: 1024K
+[    2.562151] Run /sbin/init as init process
+[    2.691199] EXT4-fs (mmcblk0p4): re-mounted. Opts: (null)
+[    2.742529] hub 2-1:1.0: USB hub found
+[    2.748854] hub 2-1:1.0: 4 ports detected
+```
