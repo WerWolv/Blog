@@ -15,7 +15,7 @@ import type {
 //--- Readme Page Config ---
 export const SITE: Site = {
   title: 'WerWolv',
-  description: "WerWolv's Hacking Blog",
+  description: "WerWolv's Blog",
   website: 'https://werwolv.net/',
   lang: 'en',
   base: '/',
