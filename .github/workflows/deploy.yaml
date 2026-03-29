@@ -32,11 +32,6 @@ jobs:
           GITHUB_CLIENT_ID: ${{ secrets.COMMENT_GITHUB_CLIENT_ID }}
           GITHUB_CLIENT_SECRET: ${{ secrets.COMMENT_GITHUB_CLIENT_ID }}
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist/
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
