@@ -24,6 +24,8 @@ jobs:
 
       - name: Install, build, and upload your site
         uses: withastro/action@v5
+        with:
+          package-manager: npm@latest
         env:
           SITE: ${{ steps.pages.outputs.origin }}
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
