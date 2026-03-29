@@ -209,7 +209,7 @@ export const POSTS_CONFIG: PostConfig = {
   title: 'Posts',
   description: 'Posts by WerWolv',
   introduce: 'All my posts about various subjects that interest me',
-  author: 'Dnzzk2',
+  author: 'WerWolv',
   homePageConfig: {
     size: 5,
     type: 'image',
@@ -241,8 +241,8 @@ export const COMMENT_CONFIG: CommentConfig = {
   enabled: true,
   system: 'gitalk',
   gitalk: {
-    clientID: import.meta.env.PUBLIC_GITHUB_CLIENT_ID,
-    clientSecret: import.meta.env.PUBLIC_GITHUB_CLIENT_SECRET,
+    clientID: import.meta.env.GITHUB_CLIENT_ID,
+    clientSecret: import.meta.env.GITHUB_CLIENT_SECRET,
     repo: 'gitalk-comment',
     owner: 'WerWolv',
     admin: ['WerWolv'],
