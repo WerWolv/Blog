@@ -14,13 +14,12 @@ import type {
 
 //--- Readme Page Config ---
 export const SITE: Site = {
-  title: 'Litos',
-  description:
-    'Litos is a modern blogging theme built on Astro.js, designed for developers. It supports multiple post layouts, photo displays, project displays, and more, providing an elegant user experience and powerful customization capabilities.',
-  website: 'https://litos.vercel.app/',
+  title: 'WerWolv',
+  description: "WerWolv's Hacking Blog",
+  website: 'https://werwolv.net/',
   lang: 'en',
   base: '/',
-  author: 'Dnzzk2',
+  author: 'WerWolv',
   ogImage: '/og-image.webp',
   transition: false,
 }
@@ -34,15 +33,11 @@ export const HEADER_LINKS: Link[] = [
     name: 'Projects',
     url: '/projects',
   },
-  {
-    name: 'Photos',
-    url: '/photos',
-  },
 ]
 
 export const FOOTER_LINKS: Link[] = [
   {
-    name: 'Readme',
+    name: '$ ~/',
     url: '/',
   },
   {
@@ -57,29 +52,25 @@ export const FOOTER_LINKS: Link[] = [
     name: 'Tags',
     url: '/tags',
   },
-  {
-    name: 'Photos',
-    url: '/photos',
-  },
 ]
 
 // get icon https://icon-sets.iconify.design/
 export const SOCIAL_LINKS: SocialLink[] = [
   {
     name: 'github',
-    url: 'https://github.com/Dnzzk2',
+    url: 'https://github.com/WerWolv',
     icon: 'icon-[ri--github-fill]',
     count: 20,
   },
   {
     name: 'twitter',
-    url: 'https://x.com/yourname',
-    icon: 'icon-[ri--twitter-x-fill]',
+    url: 'https://twitter.com/WerWolv',
+    icon: 'icon-[ri--twitter-fill]',
   },
   {
-    name: 'bilibili',
-    url: 'https://space.bilibili.com/yourSpaceId',
-    icon: 'icon-[ri--bilibili-fill]',
+    name: 'discord',
+    url: 'https://discordapp.com/users/181738643008782346',
+    icon: 'icon-[ri--discord-fill]',
   },
 ]
 
@@ -100,34 +91,44 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
       direction: 'left',
       skills: [
         {
-          name: 'JavaScript',
-          icon: 'icon-[skill-icons--javascript]',
-          url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
+          name: 'C++',
+          icon: 'icon-[skill-icons--cpp]',
+          url: 'https://cppreference.com/',
         },
         {
-          name: 'CSS',
-          icon: 'icon-[skill-icons--css]',
-          url: 'https://developer.mozilla.org/en-US/docs/Web/CSS',
+          name: 'C',
+          icon: 'icon-[skill-icons--c]',
+          url: 'https://cppreference.com/',
         },
         {
-          name: 'HTML',
-          icon: 'icon-[skill-icons--html]',
-          url: 'https://developer.mozilla.org/en-US/docs/Web/HTML',
+          name: 'Assembly',
+          icon: 'icon-[logos--arm]',
+          url: 'https://cppreference.com/',
         },
         {
-          name: 'TypeScript',
-          icon: 'icon-[skill-icons--typescript]',
-          url: 'https://www.typescriptlang.org/',
+          name: 'Shell',
+          icon: 'icon-[skill-icons--bash-dark]',
+          url: 'https://www.gnu.org/software/bash/',
         },
         {
-          name: 'Vue',
-          icon: 'icon-[skill-icons--vuejs-dark]',
-          url: 'https://vuejs.org/',
+          name: 'Rust',
+          icon: 'icon-[skill-icons--rust]',
+          url: 'https://rust-lang.org/',
         },
         {
-          name: 'Sass',
-          icon: 'icon-[skill-icons--sass]',
-          url: 'https://sass-lang.com/',
+          name: 'C#',
+          icon: 'icon-[skill-icons--cs]',
+          url: 'https://dotnet.microsoft.com/en-us/',
+        },
+        {
+          name: 'Python',
+          icon: 'icon-[material-icon-theme--python]',
+          url: 'https://www.python.org/',
+        },
+        {
+          name: 'VHDL',
+          icon: 'icon-[skill-icons--verilog]',
+          url: 'https://www.altera.com/',
         },
       ],
     },
@@ -135,34 +136,29 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
       direction: 'right',
       skills: [
         {
-          name: 'Astro',
-          icon: 'icon-[skill-icons--astro]',
-          url: 'https://astro.build/',
+          name: 'Ghidra',
+          icon: 'icon-[devicon--ghidra]',
+          url: 'https//www.nsa.gov/ghidra',
         },
         {
-          name: 'Node.js',
-          icon: 'icon-[skill-icons--nodejs-dark]',
-          url: 'https://nodejs.org/',
+          name: 'ImHex',
+          icon: 'https://raw.githubusercontent.com/WerWolv/ImHex/refs/heads/master/resources/icon.svg',
+          url: 'https://imhex.werwolv.net/',
         },
         {
-          name: 'React',
-          icon: 'icon-[skill-icons--react-dark]',
-          url: 'https://react.dev/',
+          name: 'JetBrains Suite',
+          icon: 'icon-[logos--jetbrains-icon]',
+          url: 'https://www.vim.org/',
         },
         {
-          name: 'Next.js',
-          icon: 'icon-[skill-icons--nextjs-dark]',
-          url: 'https://nextjs.org/',
+          name: 'Vim',
+          icon: 'icon-[devicon--vim]',
+          url: 'https://www.vim.org/',
         },
         {
-          name: 'Tailwind CSS',
-          icon: 'icon-[skill-icons--tailwindcss-dark]',
-          url: 'https://tailwindcss.com/',
-        },
-        {
-          name: 'Vite',
-          icon: 'icon-[skill-icons--vite-dark]',
-          url: 'https://vitejs.dev/',
+          name: 'Altium Designer',
+          icon: './altium-designer-icon.png',
+          url: 'https://www.altium.com/',
         },
       ],
     },
@@ -170,9 +166,14 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
       direction: 'left',
       skills: [
         {
-          name: 'Ubuntu',
-          icon: 'icon-[skill-icons--ubuntu-dark]',
-          url: 'https://ubuntu.com/',
+          name: 'Linux',
+          icon: 'icon-[flat-color-icons--linux]',
+          url: 'https://kernel.org/',
+        },
+        {
+          name: 'PCB Design',
+          icon: 'icon-[mdi--integrated-circuit]',
+          url: 'https://yggdrasil.werwolv.net/',
         },
         {
           name: 'Git',
@@ -180,24 +181,9 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
           url: 'https://git-scm.com/',
         },
         {
-          name: 'MongoDB',
-          icon: 'icon-[skill-icons--mongodb]',
-          url: 'https://www.mongodb.com/',
-        },
-        {
-          name: 'Vercel',
-          icon: 'icon-[skill-icons--vercel-dark]',
-          url: 'https://vercel.com/',
-        },
-        {
-          name: 'VS Code',
-          icon: 'icon-[skill-icons--vscode-dark]',
-          url: 'https://code.visualstudio.com/',
-        },
-        {
-          name: 'Obsidian',
-          icon: 'icon-[skill-icons--obsidian-dark]',
-          url: 'https://obsidian.md/',
+          name: 'Reverse Engineering',
+          icon: 'icon-[pixelarticons--binary-sharp]',
+          url: 'https://yggdrasil.werwolv.net/',
         },
       ],
     },
@@ -214,19 +200,19 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
 
 export const GITHUB_CONFIG: GithubConfig = {
   ENABLED: true,
-  GITHUB_USERNAME: 'Dnzzk2',
+  GITHUB_USERNAME: 'WerWolv',
   TOOLTIP_ENABLED: true,
 }
 
 //--- Posts Page Config ---
 export const POSTS_CONFIG: PostConfig = {
   title: 'Posts',
-  description: 'Posts by Dnzzk2',
-  introduce: 'Here, I will share the usage instructions for this theme to help you quickly use it.',
+  description: 'Posts by WerWolv',
+  introduce: 'All my posts about various subjects that interest me',
   author: 'Dnzzk2',
   homePageConfig: {
     size: 2,
-    type: 'compact',
+    type: 'time-line',
   },
   postPageConfig: {
     size: 10,
@@ -238,16 +224,16 @@ export const POSTS_CONFIG: PostConfig = {
     type: 'time-line',
   },
   ogImageUseCover: false,
-  postType: 'metaOnly',
+  postType: 'coverSplit',
   imageDarkenInDark: true,
   readMoreText: 'Read more',
   prevPageText: 'Previous',
   nextPageText: 'Next',
-  tocText: 'On this page',
+  tocText: 'Table of Contents',
   backToPostsText: 'Back to Posts',
   nextPostText: 'Next Post',
   prevPostText: 'Previous Post',
-  recommendText: 'REC',
+  recommendText: undefined,
   wordCountView: true,
 }
 

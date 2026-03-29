@@ -3,7 +3,7 @@ import { cn } from '~/lib/utils'
 
 interface Props {
   type: 'tag' | 'recommend'
-  content: string
+  content?: string
   class?: string
   variant?: 'default' | 'gradient' | 'subtle' | 'outline'
   size?: 'sm' | 'md'
@@ -64,7 +64,7 @@ const iconClass = iconConfig[type]
       title="Recommended post"
     >
       {showIcon && <span class={iconClass} />}
-      <span class="font-semibold tracking-wide">{content}</span>
+      {content !== undefined && <span class="font-semibold tracking-wide">{content}</span>}
     </span>
   )
 }

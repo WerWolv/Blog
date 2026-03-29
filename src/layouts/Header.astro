@@ -6,7 +6,7 @@ import SectionDivider from '~/components/base/SectionDivider.astro'
 import HeaderLink from '~/components/base/HeaderLink.astro'
 import SearchSwitch from '~/components/base/SearchSwitch.astro'
 import { Image } from 'astro:assets'
-import favicon from '../../public/favicon.svg'
+import favicon from '../../public/logo.png'
 ---
 
 <HeaderGradient />
@@ -14,7 +14,7 @@ import favicon from '../../public/favicon.svg'
   <div class="mx-auto global-layout-width flex justify-between px-6 sm:px-8 py-4 lg:px-8">
     <div class="flex gap-3 sm:gap-6 items-center flex-shrink-0">
       <a href="/" class="pointer-events-auto select-none" transition:persist>
-        <Image src={favicon} width={1000} height={1000} alt="Logo" class="w-8 h-8" densities={[1, 2]} loading="eager" />
+        <Image src={favicon} width={1000} height={1000} alt="Logo" class="w-8 h-8 rounded-full" densities={[1, 2]} loading="eager" />
       </a>
       <div class="flex gap-1">
         {
