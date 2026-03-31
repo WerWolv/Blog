@@ -53,7 +53,6 @@ export const FOOTER_LINKS: Link[] = [
     url: '/tags',
   },
 ]
-
 // get icon https://icon-sets.iconify.design/
 export const SOCIAL_LINKS: SocialLink[] = [
   {
@@ -87,6 +86,8 @@ export const SOCIAL_LINKS: SocialLink[] = [
  * @property {string} SKILLS_DATA.skills.name - Skills name
  * get icon https://icon-sets.iconify.design/
  */
+import altiumIcon from '~/assets/altium-designer-icon.png'
+import imhexIcon from '~/assets/imhex-icon.svg'
 export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
   SKILLS_ENABLED: true,
   SKILLS_DATA: [
@@ -145,7 +146,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         },
         {
           name: 'ImHex',
-          icon: 'https://raw.githubusercontent.com/WerWolv/ImHex/refs/heads/master/resources/icon.svg',
+          icon: imhexIcon,
           url: 'https://imhex.werwolv.net/',
         },
         {
@@ -160,7 +161,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         },
         {
           name: 'Altium Designer',
-          icon: './altium-designer-icon.png',
+          icon: altiumIcon,
           url: 'https://www.altium.com/',
         },
       ],

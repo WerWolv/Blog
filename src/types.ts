@@ -104,7 +104,7 @@ export interface TagsConfig {
 }
 
 export interface Skill {
-  icon: string
+  icon: string | ImageMetadata
   name: string
   url?: string
 }
