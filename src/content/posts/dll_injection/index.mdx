@@ -53,7 +53,7 @@ while (pid == 0) {
 #include <cstdint>
 #include <string>
 
-std::uint32_t getPID(const std::wstring&& processName) {
+std::uint32_t getPID(const std::wstring &processName) {
     std:uint32_t pid = 0;
 
     // Create snapshot
@@ -69,7 +69,8 @@ std::uint32_t getPID(const std::wstring&& processName) {
     // Iterate over all processes in the snapshot
     if (Process32First(hSnap, &procEntry)) {
         do {
-            // Check if current process name is the same as the passed in process name
+            // Check if current process name is the same
+            // as the passed in process name
             if (_wcsicmp(procEntry.szExeFile, processName.c_str()) == 0) {
                 pid = procEntry.th32ProcessID;
                 break;
@@ -114,8 +115,8 @@ if (injectDllPathRemote == nullptr)
     return 1;
 
 // Write DLL path to the memory we just allocated
-constexpr const char *dllPath = "C:\\path\\to\\inject.dll";
-WriteProcessMemory(hProc, injectDllPathRemote, dllPath, strlen(dllPath) + 1, 0);
+constexpr const char *DllPath = "C:\\path\\to\\inject.dll";
+WriteProcessMemory(hProc, injectDllPathRemote, DllPath, strlen(dllPath) + 1, 0);
 ```
 
 ### Starting the thread
@@ -154,8 +155,7 @@ Our DLL simply creates a new thread that runs our code when being loaded.
 ```cpp
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-    {
+    case DLL_PROCESS_ATTACH: {
         HANDLE hThread = CreateThread(nullptr, 0,
             (LPTHREAD_START_ROUTINE)patcherThread, hModule, 0, 0);
         if (hThread != nullptr)
@@ -289,15 +289,17 @@ namespace mem {
     }
 
     DWORD64 hookFunction(DWORD64 hookAt, DWORD64 newFunc, unsigned int size) {
-        DWORD64 newOffset = newFunc - hookAt - 5;   // -5 since the jump is relative
-                                                    // to the next instruction
+        // -5 since the jump is relative to the next instruction
+        DWORD64 newOffset = newFunc - hookAt - 5;
+
         auto oldProtection = mem::protect<DWORD[3]>(hookAt + 1, PAGE_EXECUTE_READWRITE);
 
-        mem::write<BYTE>(hookAt, 0xE9);          // Opcode of the jmp instruction
+        // Opcode of the jmp instruction
+        mem::write<BYTE>(hookAt, 0xE9);
         mem::write<DWORD>(hookAt + 1, newOffset);
 
-        for (unsigned int i = 5; i < size; i++) // nop extra bytes to avoid
-                                                // corrupting the overwritten opcode
+        // nop extra bytes to avoid corrupting the overwritten opcode
+        for (unsigned int i = 5; i < size; i++)
             mem::write<BYTE>(hookAt + i, 0x90);
 
         mem::protect<DWORD[3]>(hookAt + 1, oldProtection);
@@ -316,19 +318,20 @@ extern "C" void wglSwapBuffersTrampoline();
 
 // ...
 
-    // Get a handle to the opengl.dll
-    HMODULE hOpengl32 = GetModuleHandle(L"opengl32.dll");
+// Get a handle to the opengl.dll
+HMODULE hOpengl32 = GetModuleHandle(L"opengl32.dll");
 
-    if (hOpengl32 != nullptr) {
-        // Get the address of wglSwapBuffers
-        DWORD64 wglSwapBuffersHookAddr = (DWORD64)GetProcAddress(hOpengl32,
-            "wglSwapBuffers");
+if (hOpengl32 != nullptr) {
+    // Get the address of wglSwapBuffers
+    DWORD64 wglSwapBuffersHookAddr = (DWORD64)GetProcAddress(hOpengl32,
+        "wglSwapBuffers");
 
-        // Insert a hook to our trampolineat the start of wglSwapBuffers,
-        // returns the address to return to
-        wglSwapBuffers_return = (glSwapBuffers_t) mem::hookFunction(
-            wglSwapBuffersHookAddr, (DWORD64)wglSwapBuffersTrampoline, 5);
-    }
+    // Insert a hook to our trampolineat the start of wglSwapBuffers,
+    // returns the address to return to
+    wglSwapBuffers_return = (glSwapBuffers_t) mem::hookFunction(
+        wglSwapBuffersHookAddr, (DWORD64)wglSwapBuffersTrampoline, 5
+    );
+}
 ```
 
 ### Drawing the overlay
@@ -346,8 +349,7 @@ HWND hGameWindow;
 WNDPROC hGameWindowProc;
 bool menuShown = true;
 
-LRESULT CALLBACK windowProc_hook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK windowProc_hook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     // Toggle the overlay using the delete key
     if (uMsg == WM_KEYDOWN && wParam == VK_DELETE) {
         menuShown = !menuShown;
@@ -364,8 +366,7 @@ LRESULT CALLBACK windowProc_hook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     return CallWindowProc(hGameWindowProc, hWnd, uMsg, wParam, lParam);
 }
 
-void glSwapBuffers_hook(HDC hDc)
-{
+void glSwapBuffers_hook(HDC hDc) {
     // Initialize glew and imgui but only once
     static bool imGuiInitialized = false;
     if (!imGuiInitialized) {
