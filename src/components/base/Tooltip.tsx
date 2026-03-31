@@ -2,7 +2,6 @@ import { useRef, useState, createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { useFloating, autoUpdate, offset, shift, arrow, FloatingPortal, flip } from '@floating-ui/react'
 
-// 单例 Tooltip 上下文
 interface TooltipContextType {
   showTooltip: (element: HTMLElement, content: string) => void
   hideTooltip: () => void
@@ -10,12 +9,13 @@ interface TooltipContextType {
 
 const TooltipContext = createContext<TooltipContextType | null>(null)
 
-// 单例 Tooltip Provider
 export function TooltipProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
   const [content, setContent] = useState('')
   const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null)
   const arrowRef = useRef<HTMLDivElement>(null)
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     refs,
@@ -42,13 +42,19 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   })
 
   const showTooltip = (element: HTMLElement, tooltipContent: string) => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+      hideTimeoutRef.current = null
+    }
     setReferenceElement(element)
     setContent(tooltipContent)
     setIsOpen(true)
+    requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)))
   }
 
   const hideTooltip = () => {
-    setIsOpen(false)
+    setIsVisible(false)
+    hideTimeoutRef.current = setTimeout(() => setIsOpen(false), 150)
   }
 
   return (
@@ -59,7 +65,9 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
           <div
             ref={refs.setFloating}
             style={floatingStyles}
-            className="z-50 px-2 py-1 text-xs bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 rounded whitespace-nowrap shadow-lg"
+            className={`z-50 px-2 py-1 text-xs bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900 rounded whitespace-nowrap shadow-lg transition-opacity duration-150 ${
+              isVisible ? 'opacity-100' : 'opacity-0'
+            }`}
           >
             {content}
             <div
@@ -82,7 +90,6 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// 单例 Tooltip 组件
 export default function Tooltip({
   content,
   children,
