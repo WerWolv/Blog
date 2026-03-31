@@ -18,28 +18,28 @@ function packColor10bit(c) {
 }
 
 /**
- * 基于纯CSS的LQIP实现
- * 参考: https://frzi.medium.com/lqip-css-73dc6dda2529
- * 将3个颜色打包到单个RGBA hex值中，在CSS中解包生成网格渐变
+ * Pure CSS-based LQIP implementation
+ * Reference: https://frzi.medium.com/lqip-css-73dc6dda2529
+ * Packs 3 colors into a single RGBA hex value, then unpacks it in CSS to generate a grid gradient
  */
 
 /**
- * 使用Sharp从图像中提取3个特定位置的颜色
+ * Use Sharp to extract colors from 3 specific positions in the image
  */
 async function extractColors(imagePath) {
   try {
-    // 使用sharp将图像缩放到3x3并获取原始像素数据
+    // Use Sharp to resize the image to 3x3 and read raw pixel data
     const { data, info } = await sharp(imagePath)
       .resize(3, 3, {
         fit: 'fill',
-        kernel: 'lanczos3', // 高质量缩放
+        kernel: 'lanczos3', // High-quality resampling
       })
       .raw()
       .toBuffer({ resolveWithObject: true })
 
     const pixels = []
 
-    // 从原始像素数据中提取RGB值
+    // Extract RGB values from raw pixel data
     for (let a = 0; a < data.length; a += info.channels) {
       pixels.push({
         r: data[a],
@@ -48,8 +48,8 @@ async function extractColors(imagePath) {
       })
     }
 
-    // 选择3个特定位置的颜色：左上角(0)、中心偏右(4)、右下角(8)
-    // 3x3网格的索引布局：
+    // Select 3 specific positions: top-left (0), center-right-ish (4), bottom-right (8)
+    // 3x3 grid index layout:
     // 0 1 2
     // 3 4 5
     // 6 7 8
@@ -57,79 +57,79 @@ async function extractColors(imagePath) {
 
     return [c0, c1, c2]
   } catch (error) {
-    console.warn(`颜色提取失败: ${imagePath}`, error.message)
+    console.warn(`Color extraction failed: ${imagePath}`, error.message)
     return null
   }
 }
 
 /**
- * 将3个颜色打包到单个RGBA hex值中
- * 使用color.ts中的位打包方法：
- * - 第1个颜色：使用packColor11bit (R:4位, G:4位, B:3位)
- * - 第2个颜色：使用packColor11bit (R:4位, G:4位, B:3位)
- * - 第3个颜色：使用packColor10bit (R:3位, G:4位, B:3位)
- * 总共32位 = RGBA
+ * Pack 3 colors into a single RGBA hex value
+ * Uses the bit-packing strategy from color.ts:
+ * - Color 1: use packColor11bit (R: 4 bits, G: 4 bits, B: 3 bits)
+ * - Color 2: use packColor11bit (R: 4 bits, G: 4 bits, B: 3 bits)
+ * - Color 3: use packColor10bit (R: 3 bits, G: 4 bits, B: 3 bits)
+ * Total: 32 bits = RGBA
  */
 function packColorsToHex(colors) {
   const [c0, c1, c2] = colors
 
-  // 使用color.ts中的位打包函数
-  const pc0 = packColor11bit(c0) // 11位
-  const pc1 = packColor11bit(c1) // 11位
-  const pc2 = packColor10bit(c2) // 10位
+  // Use the bit-packing helpers from color.ts
+  const pc0 = packColor11bit(c0) // 11 bits
+  const pc1 = packColor11bit(c1) // 11 bits
+  const pc2 = packColor10bit(c2) // 10 bits
 
-  // 打包到32位：11 + 11 + 10 = 32位
+  // Pack into 32 bits: 11 + 11 + 10 = 32 bits
   const combined = (BigInt(pc0) << 21n) | (BigInt(pc1) << 10n) | BigInt(pc2)
 
-  // 转换为8位hex字符串
+  // Convert to an 8-digit hex string
   const hex = '#' + combined.toString(16).padStart(8, '0')
   return hex
 }
 
 /**
- * 分析图像并生成LQIP hex值
+ * Analyze an image and generate an LQIP hex value
  */
 async function analyzeImageForLQIP(imagePath) {
   try {
     const metadata = await sharp(imagePath).metadata()
     const { width, height } = metadata
 
-    // 检查图像是否不透明
+    // Check whether the image is fully opaque
     const stats = await sharp(imagePath).stats()
     if (!stats.isOpaque) {
-      return null // 跳过透明图像
+      return null // Skip transparent images
     }
 
-    // 提取3个主要颜色
+    // Extract 3 key colors
     const colors = await extractColors(imagePath)
     if (!colors) {
       return null
     }
 
-    // 打包颜色为hex值
+    // Pack the colors into a hex value
     const lqipHex = packColorsToHex(colors)
 
     return {
       width,
       height,
       lqipHex,
-      colors, // 用于调试
+      colors, // For debugging
     }
   } catch (error) {
-    console.warn(`LQIP分析失败: ${imagePath}`, error.message)
+    console.warn(`LQIP analysis failed: ${imagePath}`, error.message)
     return null
   }
 }
 
 /**
- * 解析图像路径
+ * Resolve an image path
  */
 function resolveImagePath(imageUrl, filePath) {
   if (path.isAbsolute(imageUrl)) {
     return imageUrl
   }
 
-  // 处理 Astro 的 ~ 路径别名
+  // Handle Astro's ~ path alias
   if (imageUrl.startsWith('~/')) {
     const contentDir = path.dirname(filePath)
     const srcDir = path.dirname(path.dirname(contentDir))
@@ -141,7 +141,7 @@ function resolveImagePath(imageUrl, filePath) {
 }
 
 /**
- * 处理单个图像节点
+ * Process a single image node
  */
 async function processImageNode(node, filePath) {
   const imagePath = resolveImagePath(node.url, filePath)
@@ -155,17 +155,17 @@ async function processImageNode(node, filePath) {
     return
   }
 
-  // 添加data属性用于CSS处理
+  // Add data attributes for CSS processing
   node.data = node.data || {}
   node.data.hProperties = node.data.hProperties || {}
 
-  // 设置尺寸属性
+  // Set dimension attributes
   if (lqipData.width && lqipData.height) {
     node.data.hProperties.width = lqipData.width
     node.data.hProperties.height = lqipData.height
   }
 
-  // 设置LQIP样式变量
+  // Set the LQIP CSS custom property
   const style = node.data.hProperties.style || ''
   const lqipStyle = `--lqip:${lqipData.lqipHex}`
 
@@ -173,26 +173,26 @@ async function processImageNode(node, filePath) {
 }
 
 /**
- * Remark插件主函数
+ * Main Remark plugin entry point
  */
 function remarkLQIP() {
   return async (tree, file) => {
     const imagesToProcess = []
 
-    // 收集所有图像节点
+    // Collect all image nodes
     visit(tree, 'image', (node) => {
       if (node.url && !node.url.match('^([a-z]+:)?//')) {
         imagesToProcess.push(node)
       }
     })
 
-    // 并行处理所有图像
+    // Process all images in parallel
     await Promise.all(
       imagesToProcess.map(async (node) => {
         try {
           await processImageNode(node, file.path)
         } catch (error) {
-          console.warn(`LQIP处理失败: ${node.url}`, error.message)
+          console.warn(`LQIP processing failed: ${node.url}`, error.message)
         }
       })
     )
@@ -201,12 +201,12 @@ function remarkLQIP() {
 
 export default remarkLQIP
 
-// 在构建环境中，我们可以通过堆栈跟踪获取调用上下文
+// In the build environment, we can infer caller context from the stack trace
 function getCallerContext() {
   const stack = new Error().stack
   if (!stack) return null
 
-  // 查找包含 /content/ 的文件路径（Windows和Linux兼容）
+  // Look for a file path containing /content/ (compatible with Windows and Linux)
   const contentMatch = stack.match(/([^:\s]+[\/\\]content[\/\\][^:\s)]+)/i)
   if (contentMatch) {
     return contentMatch[1].replace(/\\/g, '/')
@@ -222,9 +222,9 @@ export async function generateLQIPFromPath(src) {
     if (typeof src === 'string') {
       imagePath = resolveImagePath(src, '')
     } else if (src && typeof src === 'object') {
-      // 处理Astro ImageMetadata对象
+      // Handle Astro ImageMetadata objects
 
-      // 尝试多种方式获取原始文件路径
+      // Try multiple ways to retrieve the original file path
       if (src.fsPath) {
         imagePath = src.fsPath
       } else if (src.pathname) {
@@ -232,30 +232,30 @@ export async function generateLQIPFromPath(src) {
       } else if (src.src) {
         let cleanSrc = src.src
 
-        // 移除Astro的特殊前缀和查询参数
+        // Remove Astro-specific prefixes and query parameters
         if (cleanSrc.includes('/@fs/')) {
-          // 提取真实文件路径：/@fs/D:/Code/dnzzk2.icu/src/content/...
+          // Extract the real file path: /@fs/D:/Code/dnzzk2.icu/src/content/...
           cleanSrc = cleanSrc.split('/@fs/')[1]
           if (cleanSrc) {
-            // 移除查询参数并规范化路径分隔符
+            // Remove query parameters and normalize path separators
             imagePath = cleanSrc.split('?')[0].replace(/\\/g, '/')
           }
         } else if (cleanSrc.startsWith('/_astro/')) {
-          // 对于/_astro/路径，这是Astro优化后的路径
-          // 尝试从调用上下文推断原始路径
+          // For /_astro/ paths, this is Astro's optimized output path
+          // Try to infer the original path from the caller context
           const callerContext = getCallerContext()
 
           if (callerContext) {
-            // 从调用文件的目录中查找可能的图片文件
+            // Look for a likely source image from the caller file's directory
             const contextDir = path.dirname(callerContext)
             const assetsDir = path.join(contextDir, 'assets')
 
-            // 尝试匹配文件扩展名
+            // Try matching by file extension
             const srcFileName = path.basename(cleanSrc)
             const fileExtension = path.extname(srcFileName)
 
             if (existsSync(assetsDir)) {
-              // 在assets目录中查找同类型的文件
+              // Look for files of the same type in the assets directory
               const files = readdirSync(assetsDir)
               const matchingFile = files.find(
                 (file) => path.extname(file) === fileExtension || file.includes(path.parse(srcFileName).name.split('.')[0])
@@ -268,38 +268,38 @@ export async function generateLQIPFromPath(src) {
           }
 
           if (!imagePath) {
-            console.log('无法推断原始路径，跳过LQIP生成:', cleanSrc)
+            console.log('Could not infer the original path, skipping LQIP generation:', cleanSrc)
             return null
           }
         } else {
-          // 处理普通路径
+          // Handle ordinary paths
           imagePath = resolveImagePath(cleanSrc.split('?')[0], '')
         }
       } else {
-        console.warn('ImageMetadata对象缺少可用的路径属性:', Object.keys(src))
+        console.warn('ImageMetadata object is missing usable path properties:', Object.keys(src))
         return null
       }
     } else {
-      console.warn('无效的图像源:', src)
+      console.warn('Invalid image source:', src)
       return null
     }
 
     if (!imagePath) {
-      console.warn('无法解析图像路径:', src)
+      console.warn('Could not resolve image path:', src)
       return null
     }
 
-    // 检查文件是否存在
+    // Check whether the file exists
     if (!existsSync(imagePath)) {
-      console.warn(`图像文件不存在: ${imagePath}`)
+      console.warn(`Image file does not exist: ${imagePath}`)
       return null
     }
 
-    // 分析图像并生成LQIP
+    // Analyze the image and generate an LQIP value
     const result = await analyzeImageForLQIP(imagePath)
     return result ? result.lqipHex : null
   } catch (error) {
-    console.warn('LQIP生成失败:', error.message)
+    console.warn('LQIP generation failed:', error.message)
     return null
   }
 }
