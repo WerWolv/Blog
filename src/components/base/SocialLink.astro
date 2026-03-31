@@ -4,12 +4,13 @@ import NumberTicker from './NumberTicker'
 
 interface Props extends Omit<astroHTML.JSX.AnchorHTMLAttributes, 'class' | 'children'> {
   icon: string
+  hoverColor: string
   count?: number
   label?: string
   class?: string | Record<string, boolean>
 }
 
-const { label, icon, count, class: className, ...props }: Props = Astro.props
+const { label, icon, count, hoverColor, class: className, ...props }: Props = Astro.props
 const href = props.href as string
 const isGithub = href?.includes('github.com')
 const githubUser = isGithub ? href.split('/').filter(Boolean).pop() : undefined
@@ -25,7 +26,7 @@ const githubUser = isGithub ? href.split('/').filter(Boolean).pop() : undefined
   target="_blank"
 >
   <span
-    class={cn('h-6 w-6 text-muted-foreground transition-all duration-300 ease-out', 'group-hover:text-primary group-hover:rotate-6', icon)}
+    class={cn(`h-6 w-6 text-muted-foreground transition-all duration-300 ease-out group-hover:${hoverColor}`, 'group-hover:rotate-6', icon)}
   ></span>
   {
     count !== undefined && (

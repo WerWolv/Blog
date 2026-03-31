@@ -37,7 +37,7 @@ const duplicateSkills = (skills: Skill[]) => [...skills, ...skills, ...skills, .
                   >
                     {() => {
                       if (skill.icon.startsWith('icon-')) return <span class={cn('flex items-center justify-center w-5 h-5', skill.icon)} />
-                      else return <img class={cn('flex items-center justify-center w-5 h-5')} src={skill.icon} />
+                      else return <img class={cn('flex items-center justify-center w-5 h-5')} src={skill.icon} alt={skill.name} />
                     }}
                     <span class="font-sans text-sm font-medium">{skill.name}</span>
                   </Tag>

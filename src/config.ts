@@ -61,16 +61,19 @@ export const SOCIAL_LINKS: SocialLink[] = [
     url: 'https://github.com/WerWolv',
     icon: 'icon-[ri--github-fill]',
     count: 20,
+    hoverColor: 'text-primary',
   },
   {
     name: 'twitter',
     url: 'https://twitter.com/WerWolv',
     icon: 'icon-[ri--twitter-fill]',
+    hoverColor: 'text-sky-400',
   },
   {
     name: 'discord',
     url: 'https://discordapp.com/users/181738643008782346',
     icon: 'icon-[ri--discord-fill]',
+    hoverColor: 'text-indigo-400',
   },
 ]
 

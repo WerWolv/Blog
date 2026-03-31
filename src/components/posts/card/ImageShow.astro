@@ -20,7 +20,7 @@ const recommendText = POSTS_CONFIG.recommendText
 
 <article class:list={[`group flex flex-col sm:flex-row gap-6 sm:gap-10 ${isReverse ? 'sm:flex-row-reverse' : ''}`, className]} {style}>
   <div class="sm:w-2/6 min-[var(--layout-change-width)]:w-2/8 flex flex-col overflow-hidden">
-    <a href={`/posts/${post.id}`} class="block relative">
+    <a href={`/posts/${post.id}`} class="block relative" aria-label={post.data.title}>
       <div class="aspect-[1200/700] overflow-hidden bg-muted/30 relative">
         {
           post.data.cover && (
@@ -29,7 +29,6 @@ const recommendText = POSTS_CONFIG.recommendText
               alt=""
               width={IMAGE_WIDTH}
               height={IMAGE_HEIGHT}
-              loading="lazy"
               decoding="async"
               format="webp"
               class="w-full h-full object-cover rounded-md"
@@ -72,7 +71,7 @@ const recommendText = POSTS_CONFIG.recommendText
     </a>
 
     <div class="flex flex-wrap items-center gap-2 mb-3">
-      {post.data.pinned && <Badge type="recommend" content={'Pinned'} />}
+      {post.data.pinned && <Badge type="pinned" content={'Pinned'} />}
       {post.data.recommend && <Badge type="recommend" content={recommendText} />}
       {post.data.tags?.map((tag) => <Badge type="tag" content={tag} />)}
     </div>
