@@ -11,6 +11,8 @@ tags: ['Windows', 'x86', 'RuneScape']
 license: 'CC-BY-NC-SA-4.0'
 ---
 
+import NotePanel from '@/NotePanel'
+
 ## Introduction
 
 I started this project mainly because I wanted a proper XP tracker I didn't have to pay extra for since the price felt really unjustifiable to me.
@@ -189,8 +191,10 @@ The secret of drawing an overlay in any process is hooking the graphic library's
 In case of OpenGL this function is called `wglSwapBuffers`, in case of DirectX it's `d3dEndScene`.
 We simply let the Game draw all it's content and when it calls the function to end the current frame, we draw our overlay on top before calling the actual end frame function.
 
-Note: An easy way to find out what the Game you want to hook uses, is to load the Game executable into Ghidra and checking it's imports in the Symbol Tree.
-
+<NotePanel type="info">
+  An easy way to find out what the Game you want to hook uses, is to load the Game executable into Ghidra and checking it's imports in the
+  Symbol Tree.
+</NotePanel>
 ![Imports](assets/ghidra_imports.png)
 
 (RuneScape imports both opengl32.dll AND d3d9.dll here but according to the wiki, it only uses Direct3D if OpenGL is not working)
