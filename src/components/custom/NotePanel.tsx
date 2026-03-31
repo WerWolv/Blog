@@ -1,6 +1,3 @@
-import { useStore } from '@nanostores/react'
-import { themeStore } from '~/stores/theme'
-
 interface NotePanelProps {
   title: string
   type: 'info|hint|alert'
@@ -47,8 +44,6 @@ const Types: any = {
 }
 
 export default function NotePanel({ title, type, children, id }: NotePanelProps) {
-  const theme = useStore(themeStore)
-
   let config = Types[type]
   const scopeId = `note-panel-${type}${id ? `-${id}` : ''}`
   return (
