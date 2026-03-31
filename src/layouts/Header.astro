@@ -10,11 +10,19 @@ import favicon from '../../public/logo.png'
 ---
 
 <HeaderGradient />
-<header class="z-1">
+<header>
   <div class="mx-auto global-layout-width flex justify-between px-6 sm:px-8 py-4 lg:px-8">
     <div class="flex gap-3 sm:gap-6 items-center flex-shrink-0">
-      <a href="/" class="pointer-events-auto select-none" transition:persist>
-        <Image src={favicon} width={128} height={128} alt="Logo" class="w-8 h-8 rounded-full" densities={[1, 2]} loading="eager" />
+      <a href="/" class="pointer-events-auto select-none z-10" transition:persist style="filter: saturate(0.75)">
+        <Image
+          src={favicon}
+          width={128}
+          height={128}
+          alt="Logo"
+          class="w-8 h-8 rounded-full transition ease-in-out hover:scale-105"
+          densities={[1, 2]}
+          loading="eager"
+        />
       </a>
       <div class="flex gap-1">
         {

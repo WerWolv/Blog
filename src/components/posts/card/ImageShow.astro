@@ -11,7 +11,7 @@ const { post, index, coverLayout, class: className, style }: Props = Astro.props
 
 // 固定图片尺寸为 1200*630，宽高比约为 1.9:1
 const IMAGE_WIDTH = 1200
-const IMAGE_HEIGHT = 630
+const IMAGE_HEIGHT = 700
 
 const imagePosition = post.data.coverLayout || coverLayout || (index % 2 === 1 ? 'right' : 'left')
 const isReverse = imagePosition === 'right'
@@ -21,7 +21,7 @@ const recommendText = POSTS_CONFIG.recommendText
 <article class:list={[`group flex flex-col sm:flex-row gap-6 sm:gap-10 ${isReverse ? 'sm:flex-row-reverse' : ''}`, className]} {style}>
   <div class="sm:w-2/6 min-[var(--layout-change-width)]:w-2/8 flex flex-col overflow-hidden">
     <a href={`/posts/${post.id}`} class="block relative">
-      <div class="aspect-[1200/630] overflow-hidden bg-muted/30 relative">
+      <div class="aspect-[1200/700] overflow-hidden bg-muted/30 relative">
         {
           post.data.cover && (
             <LqipImage
@@ -32,7 +32,7 @@ const recommendText = POSTS_CONFIG.recommendText
               loading="lazy"
               decoding="async"
               format="webp"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover rounded-md"
             />
           )
         }
@@ -72,6 +72,7 @@ const recommendText = POSTS_CONFIG.recommendText
     </a>
 
     <div class="flex flex-wrap items-center gap-2 mb-3">
+      {post.data.pinned && <Badge type="recommend" content={'Pinned'} />}
       {post.data.recommend && <Badge type="recommend" content={recommendText} />}
       {post.data.tags?.map((tag) => <Badge type="tag" content={tag} />)}
     </div>

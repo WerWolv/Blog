@@ -2,7 +2,7 @@
 import { cn } from '~/lib/utils'
 
 interface Props {
-  type: 'tag' | 'recommend'
+  type: 'tag' | 'recommend' | 'pinned'
   content?: string
   class?: string
   variant?: 'default' | 'gradient' | 'subtle' | 'outline'
@@ -26,13 +26,14 @@ const variantClasses = {
 }
 
 // 根据类型设置默认variant
-const defaultVariant = type === 'recommend' ? 'gradient' : 'default'
+const defaultVariant = type === 'recommend' || type === 'pinned' ? 'gradient' : 'default'
 const finalVariant = variant === 'default' ? defaultVariant : variant
 
 // 图标配置
 const iconConfig = {
   tag: 'icon-[heroicons--hashtag-16-solid]',
   recommend: 'icon-[garden--sparkle-fill-16] ',
+  pinned: 'icon-[garden--pin-fill-16] ',
 }
 
 const iconClass = iconConfig[type]
@@ -44,7 +45,7 @@ const iconClass = iconConfig[type]
       href={`/tags/${content}`}
       aria-label={`View posts tagged with ${content}`}
       class={cn(
-        'inline-flex items-center font-medium  transition-colors duration-200 select-none',
+        'inline-flex items-center font-medium transition-colors duration-200 select-none h-5',
         sizeClasses[size],
         variantClasses[finalVariant],
         className
@@ -53,15 +54,28 @@ const iconClass = iconConfig[type]
       {showIcon && <span class={iconClass} />}
       {content}
     </a>
-  ) : (
+  ) : type === 'recommend' ? (
     <span
       class={cn(
-        'inline-flex items-center font-medium transition-colors duration-200 select-none',
+        'inline-flex items-center font-medium transition-colors duration-200 select-none h-5',
         sizeClasses[size],
         variantClasses[finalVariant],
         className
       )}
       title="Recommended post"
+    >
+      {showIcon && <span class={iconClass} />}
+      {content !== undefined && <span class="font-semibold tracking-wide">{content}</span>}
+    </span>
+  ) : (
+    <span
+      class={cn(
+        'inline-flex items-center font-medium transition-colors duration-200 select-none h-5',
+        sizeClasses[size],
+        variantClasses[finalVariant],
+        className
+      )}
+      title="Pinned post"
     >
       {showIcon && <span class={iconClass} />}
       {content !== undefined && <span class="font-semibold tracking-wide">{content}</span>}

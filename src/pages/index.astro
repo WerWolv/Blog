@@ -17,7 +17,7 @@ let showPosts: any[] = []
 const pinnedPosts = await getPinnedPosts()
 const hasPinnedPosts = pinnedPosts.length > 0
 if (hasPinnedPosts) {
-  showPosts = pinnedPosts
+  showPosts = pinnedPosts.concat(await getNumPosts(Math.max(0, size - pinnedPosts.length)))
 } else {
   showPosts = await getNumPosts(size)
 }
@@ -41,11 +41,10 @@ if (hasPinnedPosts) {
     </div>
     <SectionDivider />
     <div class="py-8 pb-10 px-6 sm:px-8">
-      <h2 class="text-2xl sm:text-3xl tracking-tight">Posts</h2>
-      <p class="text-muted-foreground mb-6 mt-1">
-        {hasPinnedPosts ? `Pinned` : 'Recent'}
-        {showPosts.length} posts, worth a look.
-      </p>
+      <a href="./posts">
+        <h2 class="text-2xl sm:text-3xl tracking-tight">Posts</h2>
+      </a>
+      <p class="text-muted-foreground mb-6 mt-1">Most relevant posts, worth a look.</p>
       <List posts={showPosts} {type} coverLayout={POSTS_CONFIG.homePageConfig?.coverLayout} />
     </div>
     {
