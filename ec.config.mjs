@@ -41,8 +41,8 @@ export default defineEcConfig({
     pluginLineNumbers(),
   ],
 
-  themes: ['catppuccin-macchiato', 'catppuccin-latte'],
-  themeCssSelector: (theme) => (theme.name === 'catppuccin-macchiato' ? '.dark' : ':root:not(.dark)'),
+  themes: ['aurora-x', 'light-plus'],
+  themeCssSelector: (theme) => (theme.name === 'aurora-x' ? '.dark' : ':root:not(.dark)'),
   useDarkModeMediaQuery: false,
   useStyleReset: false,
 })
