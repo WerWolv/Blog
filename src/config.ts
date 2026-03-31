@@ -86,8 +86,8 @@ export const SOCIAL_LINKS: SocialLink[] = [
  * @property {string} SKILLS_DATA.skills.name - Skills name
  * get icon https://icon-sets.iconify.design/
  */
-import altiumIcon from '~/assets/altium-designer-icon.png'
-import imhexIcon from '~/assets/imhex-icon.svg'
+import altiumIcon from '/src/assets/altium-designer-icon.png'
+import imhexIcon from '/src/assets/imhex-icon.svg'
 export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
   SKILLS_ENABLED: true,
   SKILLS_DATA: [
