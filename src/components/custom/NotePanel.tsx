@@ -83,6 +83,7 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
           backgroundColor: 'var(--bg-color)',
           width: '100%',
           padding: '10px 1em 1px 2em',
+          marginBottom: '1em',
           border: 'none',
           clipPath: `path(evenodd, "M -10,-10 H 2000 V 2000 H 0 Z M 0,0 m ${CircleRadius},0 a ${CircleRadius},${CircleRadius} 0 1,0 -${CircleRadius * 2},0 a ${CircleRadius},${CircleRadius} 0 1,0 ${CircleRadius * 2},0")`,
           borderLeft: 'solid var(--border-color)',
