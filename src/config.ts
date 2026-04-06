@@ -107,7 +107,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'Assembly',
           icon: 'icon-[logos--arm]',
-          url: 'https://cppreference.com/',
+          url: 'https://www.arm.com/',
         },
         {
           name: 'Shell',
@@ -122,7 +122,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'C#',
           icon: 'icon-[skill-icons--cs]',
-          url: 'https://dotnet.microsoft.com/en-us/',
+          url: 'https://dotnet.microsoft.com/',
         },
         {
           name: 'Python',
@@ -142,7 +142,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'Ghidra',
           icon: 'icon-[devicon--ghidra]',
-          url: 'https//www.nsa.gov/ghidra',
+          url: 'https//www.nsa.gov/ghidra/',
         },
         {
           name: 'ImHex',
@@ -152,7 +152,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'JetBrains Suite',
           icon: 'icon-[logos--jetbrains-icon]',
-          url: 'https://www.vim.org/',
+          url: 'https://www.jetbrains.com/',
         },
         {
           name: 'Vim',
@@ -187,7 +187,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'Reverse Engineering',
           icon: 'icon-[pixelarticons--binary-sharp]',
-          url: 'https://yggdrasil.werwolv.net/',
+          url: 'https://github.com/Atmosphere-NX/Atmosphere/',
         },
       ],
     },
