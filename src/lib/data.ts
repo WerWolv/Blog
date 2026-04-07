@@ -10,7 +10,7 @@ export function postsSort(posts: CollectionEntry<'posts'>[]) {
 
 export async function getAllPosts(): Promise<CollectionEntry<'posts'>[]> {
   const allPosts = await getCollection('posts')
-  return postsSort(allPosts.filter((post) => !post.data.draft))
+  return postsSort(allPosts.filter((post) => !post.data.draft || import.meta.env.DEV))
 }
 
 export async function getPinnedPosts(): Promise<CollectionEntry<'posts'>[]> {
@@ -21,7 +21,7 @@ export async function getPinnedPosts(): Promise<CollectionEntry<'posts'>[]> {
 
 export async function getNumPosts(size: number): Promise<CollectionEntry<'posts'>[]> {
   const allPosts = await getCollection('posts')
-  return postsSort(allPosts.filter((post) => !post.data.draft)).slice(0, size)
+  return postsSort(allPosts.filter((post) => !post.data.draft || import.meta.env.DEV)).slice(0, size)
 }
 
 export async function getAllTags(): Promise<Record<string, number>> {
@@ -39,7 +39,7 @@ export async function getAllTags(): Promise<Record<string, number>> {
 export async function getAllProjects(): Promise<CollectionEntry<'projects'>[]> {
   const allProjects = await getCollection('projects')
   return allProjects
-    .filter((project) => !project.data.draft)
+    .filter((project) => !project.data.draft || import.meta.env.DEV)
     .sort((a, b) => {
       return a.data.order - b.data.order
     })

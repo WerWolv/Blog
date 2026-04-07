@@ -59,12 +59,14 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
         }
       `}</style>
       <svg style={{ zIndex: 1, position: 'absolute', overflow: 'visible', pointerEvents: 'none' }}>
-        <path
-          d={`M ${CircleRadius},0 A ${CircleRadius},${CircleRadius} 0 0,1 0,${CircleRadius}`}
-          fill="none"
-          stroke="var(--border-color)"
-          strokeWidth="3px"
-        />{' '}
+        <svg xmlns="http://www.w3.org/2000/svg" width="28.5" height="34.5" fill="none" viewBox="0 1 57 69" preserveAspectRatio="none">
+          <path
+            fill="var(--border-color)"
+            stroke="var(--border-color)"
+            strokeWidth="0px"
+            d="M57 4C57 2.5 56 1 54 1C52.5 1 51 2 51 4L57 4ZM9 52L8.5 49L9 52ZM6 69V59H0V69H6ZM10 55L14 54L13 48L8.5 49L10 55ZM14 54C38 49 56 28 57 4L51 4C50 25 34 44 13 48L14 54ZM6 59C6 57 7.5 55 10 55L8.5 49C3.5 50 0 54 0 59H6Z"
+          ></path>
+        </svg>
       </svg>
       <span
         style={{
@@ -85,7 +87,7 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
           padding: '10px 1em 1px 2em',
           marginBottom: '1em',
           border: 'none',
-          clipPath: `path(evenodd, "M -10,-10 H 2000 V 2000 H 0 Z M 0,0 m ${CircleRadius},0 a ${CircleRadius},${CircleRadius} 0 1,0 -${CircleRadius * 2},0 a ${CircleRadius},${CircleRadius} 0 1,0 ${CircleRadius * 2},0")`,
+          clipPath: `path(evenodd, "M -10,-10 H 2000 V 2000 H 0 Z M 0,0 m ${CircleRadius + 3},0 a ${CircleRadius + 3},${CircleRadius + 3} 0 1,0 -${(CircleRadius + 3) * 2},0 a ${CircleRadius + 3},${CircleRadius + 3} 0 1,0 ${(CircleRadius + 3) * 2},0")`,
           borderLeft: 'solid var(--border-color)',
           borderWidth: '3px',
         }}

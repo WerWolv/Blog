@@ -12,7 +12,6 @@ interface TreeNode {
 function parseLine(raw: string): Omit<TreeNode, 'children'> {
   const trimmed = raw.trim().replace(/^-\s*/, '')
 
-  console.log(raw)
   const highlighted = /^<strong>.+<\/strong>/.test(trimmed)
   const unwrapped = highlighted ? trimmed.replace(/^<strong>(.+?)<\/strong>(.*)$/, '$1$2') : trimmed
 
@@ -106,8 +105,8 @@ function parseHtml(html: string): TreeNode[] {
 function parseFiles(input: ReactNode): TreeNode[] {
   const first = React.Children.toArray(input)[0]
 
-  if (isValidElement(first) && typeof first.props?.value === 'string') {
-    return parseHtml(first.props.value)
+  if (isValidElement(first) && typeof (first.props as any)?.value === 'string') {
+    return parseHtml((first.props as any).value)
   }
 
   return []

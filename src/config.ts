@@ -229,7 +229,7 @@ export const POSTS_CONFIG: PostConfig = {
   },
   ogImageUseCover: false,
   postType: 'coverSplit',
-  imageDarkenInDark: true,
+  imageDarkenInDark: false,
   readMoreText: 'Read more',
   prevPageText: 'Previous',
   nextPageText: 'Next',
