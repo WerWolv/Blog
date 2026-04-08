@@ -17,6 +17,7 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    assetsInclude: ['**/*.pdf'],
   },
   markdown: {
     syntaxHighlight: false,
