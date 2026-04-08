@@ -21,21 +21,21 @@ Say you're being handed a USB device and told to write a driver for it. Seems li
 
 <PencilUnderline color="orange">None of this is actually true though</PencilUnderline>. Writing a driver for a USB device is actually not much more difficult than writing an application that uses Sockets.
 
-This post aims to be a high level introduction to using USB for people who may not have worked with Hardware too much yet and just want to use the technology. There are amazing resources out there such as [USB in a NutShell](https://www.beyondlogic.org/usbnutshell/usb1.shtml) that go into a lot of detail about how USB precisely works (check them out if you want more information), they are however not really approachable for somebody who's has never worked with USB before and doesn't have a certain background in Hardware. You don't need to be an Embedded Systems Engineer to use USB the same way you don't need to be a Network Specialist to use Sockets and the Internet.
+This post aims to be a high level introduction to using USB for people who may not have worked with Hardware too much yet and just want to use the technology. There are amazing resources out there such as [USB in a NutShell](https://www.beyondlogic.org/usbnutshell/usb1.shtml) that go into a lot of detail about how USB precisely works (check them out if you want more information), they are however not really approachable for somebody who has never worked with USB before and doesn't have a certain background in Hardware. You don't need to be an Embedded Systems Engineer to use USB the same way you don't need to be a Network Specialist to use Sockets and the Internet.
 
 # The USB Device
 
-The device we'll be using will be an Android phone in Bootloader mode. The reason for this is that
+The device we'll be using an Android phone in Bootloader mode. The reason for this is that
 - It's a device you can easily get your hands on
 - The protocol it uses is well documented and incredibly simple
 - Drivers for it are generally not pre-installed on your system so the OS will not interfere with our experiments
 
-Getting the phone into Bootloader mode is different for every device, but usually involves holding down a combination of buttons while the phone is starting up. For me it's holding the volume down button while powering on the phone
+Getting the phone into Bootloader mode is different for every device, but usually involves holding down a combination of buttons while the phone is starting up. In my case it's holding the volume down button while powering on the phone
 
 
 # Enumerating the device by hand
 
-Enumeration refers to the process of the host asking the device for information about itself. This happens automatically when you plug in the device and it's where the OS normally decides which driver to load for the device. For most standard devices, the OS will look at the USB Device Class and loads a driver that supports that class. For vendor specific devices, you generally install a driver made by the manufacturer which will look at the VID and PID instead to detect if it should handle the device or not.
+Enumeration refers to the process of the host asking the device for information about itself. This happens automatically when you plug in the device and it's where the OS normally decides which driver to load for the device. For most standard devices, the OS will look at the USB Device Class and loads a driver that supports that class. For vendor specific devices, you generally install a driver made by the manufacturer which will look at the `VID` (Vendor ID) and `PID` (Product ID) instead to detect whether or not it should handle the device.
 
 ## Basic Information
 
@@ -135,7 +135,7 @@ Device plugged in!
 Congrats! You have a program now that can detect your device without ever having to touch any Kernel code at all.
 
 <NotePanel title="Note for Windows" type="info">
-    On Linux, all of this will generally just work. If for whatever reason a driver is loaded anyways though, you can forcefully detach it using `libusb_detach_kernel_driver()`.
+    On Linux, all of this will generally just work. If for any reason a driver anyway being loaded, you can forcefully detach it using `libusb_detach_kernel_driver()`.
 
     On Windows, things may look different. If you're lucky, the device has a `Microsoft OS Descriptor` that tells Windows to load the `Winusb.sys` driver for your device. In that case, `libusb` can talk to it directly. However if no driver was loaded (the device shows up in the Device Manager with a little ⚠️ icon), you might need to use [Zadig](https://zadig.akeo.ie/) to force-replace the driver of the device with `Winusb.sys` or another supported driver. More information can be found here: [libusb Wiki](https://github.com/libusb/libusb/wiki/Windows)
 </NotePanel>
@@ -191,11 +191,13 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0000: 01 00 
 ```
 
-Those bytes came from the device itself! Decoding them using the specification tells us that `byte 0x00` tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and `byte 0x01` means it does not support Remote Wakeup (meaning it cannot wake up the host). There are a few more standardized request types (and some devices even add their own for simple things!) but the main one we (and the OS too) are interested in is the `GET_DESCRIPTOR` request.
+Those bytes came from the device itself! Decoding them using the specification tells us that the first byte tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and the second byte means it does not support Remote Wakeup (meaning it cannot wake up the host). 
+
+There are a few more standardized request types (and some devices even add their own for simple things!) but the main one we (and the OS too) are interested in is the `GET_DESCRIPTOR` request.
 
 ## Requesting a Descriptor
 
-Descriptors are binary structures that are generally hardcoded into the firmware of a USB device. They are what tells the host exactly what the device is, what it's capable of and what driver it would like the OS to load. So when you plug in a device, all the host really does is send multiple `GET_DESCRIPTOR` requests to the standardized Control Endpoint at ID `0x00` to get back a struct that gives it all the information it needs for enumeration. And the cool thing is, <PencilUnderline color="orange">_we can do that too!_</PencilUnderline>
+Descriptors are binary structures that are generally hardcoded into the firmware of a USB device. They are what tells the host exactly what the device is, what it's capable of and what driver it would like the OS to load. So when you plug in a device, the host simply sends multiple `GET_DESCRIPTOR` requests to the standardized Control Endpoint at ID `0x00` to get back a struct that gives it all the information it needs for enumeration. And the cool thing is, <PencilUnderline color="orange">_we can do that too!_</PencilUnderline>
 
 
 Instead of a `GET_STATUS` request, we now send a `GET_DESCRIPTOR` request:
@@ -323,59 +325,62 @@ Device Status:     0x0001
   Self Powered
 ```
 
-This output shows us a few more of the descriptors the device has. Specifically, it has a single Configuration Descriptor that contains a Interface Descriptor for the `Android Fastboot` interface. And that interface now contains two Endpoints. This is where all other endpoints are defined and these will be the ones we'll be using in the next step to actually finally send data to the device's Fastboot interface!
+This output shows us a few more of the descriptors the device has. Specifically, it has a single Configuration Descriptor that contains a Interface Descriptor for the `Android Fastboot` interface. And that interface now contains two Endpoints. This is where the device tells the host about all the other endpoints, besides the Control endpoint, and these will be the ones we'll be using in the next step to actually finally send data to the device's Fastboot interface!
 
 
 # Endpoints
 
-Let's talk a bit more about endpoints first though. We already learned about the Control endpoint on address 0x00. As we can see in the descriptors though, there's more than just that one and there's different types of them as well.
+Let's talk a bit more about endpoints first though. We already learned about the [Control endpoint on address 0x00](#requesting-a-descriptor). 
+Looking at the descriptors above, that control descriptor is not there though. Instead, there's two others with different types.
 
 ## Control Transfer Type
-Control Endpoints we discussed in length before. There's exactly one per device and it's always fixed on Endpoint Address `0x00`.
-It's mainly used for enumeration and simple configuration and isn't very flexible.<br/>
+There's exactly one per device and it's always fixed on Endpoint Address `0x00`. It's what is used do initial configuration and request information about the device.
+
+The main purpose of the Control endpoint is to solve the chicken-and-egg problem where you couldn't communicate with a device without knowing its endpoints but to know its endpoints you'd need to communicate with it. That's also why it doesn't even appear in the descriptors. It's not part of any interface but the device itself. And we know about its existence thanks to the spec, without it having to be advertised.
+
 It's made for setting simple configuration values or requesting small amounts of data. The function in libusb doesn't even allow you to set the endpoint address to make a control request to because there's only ever one control endpoint and it's always on address `0x00`
 
 ## Bulk Transfer Type
 Bulk Endpoints are what's used when you want to transfer larger amounts of data. They're used when you have large amounts of non-time-sensitive data that you just want to send over the wire.<br/>
 This is what's used for things like the Mass Storage Class, `CDC-ACM` (Serial Port over USB) and `RNDIS` (Ethernet over USB).
 
-Another important detail here is, data sent over Bulk endpoints is high bandwidth but low priority. Meaning the Bulk data will always just fill up the leftover bandwidth that's still available. Any Interrupt and Isochronous transfers have a higher priority so if you're sending both Bulk and Isochronous data over the same connection, the bandwidth of the Bulk transmission will be lowered until the Isochronous one can transmit its data in the requested timeframe.
+One detail: Data sent over Bulk endpoints is high bandwidth but low priority. This means, Bulk data will always just fill up the remaining bandwidth. Any Interrupt and Isochronous transfers (further detail below) have a higher priority so if you're sending both Bulk and Isochronous data over the same connection, the bandwidth of the Bulk transmission will be lowered until the Isochronous one can transmit its data in the requested timeframe.
 
 ## Interrupt Transfer Type
-Interrupt Endpoints are the opposite. They allow you to send small amounts of data with very low latency. For example Keyboards and Mice use this transfer type under the `HID` Class to poll for button presses 1000+ times per second. If no button was pressed, the transfer fails immediately without sending back a full failure message (only a `NAK`), only when something actually changed you'll get a description back of what happened. 
+Interrupt Endpoints are the opposite of Bulk Endpoints. They allow you to send small amounts of data with very low latency. For example Keyboards and Mice use this transfer type under the `HID` Class to poll for button presses 1000+ times per second. If no button was pressed, the transfer fails immediately without sending back a full failure message (only a `NAK`), only when something actually changed you'll get a description back of what happened. 
 
 The important fact here is, even though these are called interrupt endpoints, there's no interrupts happening. The Device _still_ does not talk to the Host without being asked. The Host just polls so frequently that it acts as if it's an interrupt.<br/>
 The functions in libusb that handle interrupt transfers also abstract this behaviour away further. You can start an interrupt transfer and the function will block until the device sends back a full response.
 
 ## Isochronous Transfer Type
 Isochronous Endpoints are somewhat special. They're used for bigger amounts of data that is really timing critical. They're mainly used for streaming interfaces such as `Audio` or `Video` where any latency or delay will be immediately noticeable through stuttering or desyncs. In libusb, these work asynchronously. You can setup multiple transfers at once and they will be queued and you'll get back an event once data has arrived so you can process it and queue further requests.<br/>
-This type is generally not used very often.
+This type is generally not used very often outside of the Audio and Video classes.
 
 ## In / Out Endpoints
 Besides the Transfer Type, endpoints also have a direction. Keep in mind, USB is a full master-slave oriented interface. The Host is the only one ever making any requests and the Device will never answer unless addressed by the Host. This means, the device cannot actually send any data directly to the Host. Instead the Host needs to _ask_ the Device to _please_ send the data over.
 
 This is what the direction is for. 
 - `IN` endpoints are for when the Host wants to receive some data. It makes a request on an `IN` endpoint and waits for the device to respond back with the data. 
-- `OUT` endpoints are for when the Host wants to transmit some data. It makes a request on an `OUT` endpoint and then immediately transfers the data it wants to send over. The Device in this case only acknowledges (`ACK`) that it received the data but won't send any more data back.
+- `OUT` endpoints are for when the Host wants to transmit some data. It makes a request on an `OUT` endpoint and then immediately transfers the data it wants to send over. The Device in this case only acknowledges (`ACK`) that it received the data but won't send any additional data back.
 
 <NotePanel type="hint">
-The way I remember the directions is using that master-slave analogy. The master is very self-centered and always refers to everything from <PencilUnderline>his perspective</PencilUnderline>. 
+The way I remember the directions is using that master-slave analogy. The master is very self-centered and always refers to everything from <PencilUnderline>its perspective</PencilUnderline>. 
 - `IN`:  I want to get data in
 - `OUT`: I want to send data out
 </NotePanel>
 
-Contrary to the transfer type, the direction is encoded in the endpoint address instead. If the topmost bit (MSB) is set to `1`, it's an `IN` endpoint, if it's set to `0` it's an `OUT` endpoint.
+Contrary to the transfer type, the direction is encoded in the endpoint address instead. If the topmost bit (MSB) is set to `1`, it's an `IN` endpoint, if it's set to `0` it's an `OUT` endpoint. (If you're into Hardware, you might recognize this same concept from the I2C interface.)
 
 That means two things:
 - You can have a maximum of $$2^7 - 1 = 127$$ custom endpoints available at once
     - $$2^7$$ because we have 7 bits available for addresses
     - $$-1$$ because we always have the control endpoint that's on the fixed address `0x00`.
-- Endpoints are fully unidirectional. Either you're using an endpoint to request data or to transmit data, you can't do both
-    - That's the reason why our Fastboot interface has two Bulk endpoints too, one is used to send over commands and the other one is used to receive back the response for those same commands.
+- Endpoints are entirely unidirectional. Either you're using an endpoint to request data or to transmit data, it cannot do both at once
+    - That's also the reason why our Fastboot interface has two Bulk endpoints: one is dedicated to listening to requests the Host sends over and the other one is for responding to those same requests
 
 # Fastboot, finally
 
-Now that we have all this information about USB, let's look into the Fastboot protocol. The best documentation for this is both the [u-boot Source Code](https://github.com/u-boot/u-boot/tree/master/drivers/fastboot) as well as its [Documentation](https://docs.u-boot.org/en/stable/android/fastboot-protocol.html#example-session). 
+Now that we have all this information about USB, let's look into the Fastboot protocol. The best documentation for this is both the [u-boot Source Code](https://github.com/u-boot/u-boot/tree/master/drivers/fastboot) and as its [Documentation](https://docs.u-boot.org/en/stable/android/fastboot-protocol.html#example-session). 
 
 According to the documentation, the protocol really is incredibly simple. The Host sends a string command and the device responds with a 4 character status code followed by some data.
 
