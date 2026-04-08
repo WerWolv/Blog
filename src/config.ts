@@ -227,7 +227,7 @@ export const POSTS_CONFIG: PostConfig = {
     size: 10,
     type: 'time-line',
   },
-  ogImageUseCover: false,
+  ogImageUseCover: true,
   postType: 'coverSplit',
   imageDarkenInDark: false,
   readMoreText: 'Read more',
