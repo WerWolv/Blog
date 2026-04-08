@@ -279,7 +279,7 @@ export const PHOTOS_CONFIG: PhotosConfig = {
 
 export const ANALYTICS_CONFIG: AnalyticsConfig = {
   vercount: {
-    enabled: false,
+    enabled: true,
   },
   umami: {
     enabled: false,
