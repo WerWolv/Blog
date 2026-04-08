@@ -429,7 +429,7 @@ libusb_bulk_transfer(
 );
 
 // Print the transmitted data data
-std::println("Response: {}", 
+std::println("Request: {}", 
     std::string_view(
         reinterpret_cast<const char *>(bytes.data()),
         num_bytes_transferred
