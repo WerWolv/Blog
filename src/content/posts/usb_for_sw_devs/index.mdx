@@ -222,7 +222,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0010: 00 01 
 ```
 
-Now to decode this data, we need to look at the USB specification. Specifically `usb_20.pdf, Page 262`, downloaded from the USB  Implementers Forum's website. We can find that the format looks as follows: 
+Now to decode this data, we need to look at the USB specification. Specifically `usb_20.pdf, Page 262`, downloaded from the [USB Implementers Forum's website](https://www.usb.org/documents). We can find that the format looks as follows: 
 
 ```rust title="usb.hexpat"
 struct DeviceDescriptor {
@@ -408,7 +408,7 @@ std::vector<uint8_t> bytes(64);
 // Copy the command "getvar:version"
 // to the start of the buffer
 std::ranges::copy(
-    std::string_view("getvar:version"), 
+    "getvar:version", 
     bytes.begin()
 );
 
