@@ -332,6 +332,7 @@ This output shows us a few more of the descriptors the device has. Specifically,
 # Endpoints
 
 Let's talk a bit more about endpoints first though. We already learned about the [Control endpoint on address 0x00](#requesting-a-descriptor). 
+Endpoints are basically the equivalent to ports that a device on the network opened for us to send data back and fourth. The device specifies in its descriptor which kind of endpoints it has and then services these in its firmware. So we don't even need to do port scanning or know that `SSH` just runs on port 22 usually, we have a nice way of finding out what interfaces the device has, what language they speak and how we can speak to them.
 Looking at the descriptors above, that control descriptor is not there though. Instead, there's two others with different types.
 
 ## Control Transfer Type
