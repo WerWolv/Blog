@@ -34,7 +34,7 @@ const { id, title } = Astro.props
         repo: gitalk.repo,
         owner: gitalk.owner,
         admin: gitalk.admin,
-        language: gitalk.language || 'zh-CN',
+        language: gitalk.language || 'en-US',
         perPage: gitalk.perPage || 5,
         pagerDirection: gitalk.pagerDirection || 'last',
         createIssueManually: gitalk.createIssueManually || false,
@@ -57,16 +57,13 @@ const { id, title } = Astro.props
     const container = document.getElementById('gitalk-container')
     if (!container) return
 
-    // 清理之前的观察器
     cleanup()
 
-    // 检查是否已经在可视区域内
     if (isElementInViewport(container)) {
       initGitalk()
       return
     }
 
-    // 设置观察器监听
     observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -92,14 +89,12 @@ const { id, title } = Astro.props
     }
   }
 
-  // 重置函数，在页面切换时调用
   function resetAndInitialize() {
-    isInitialized = false // 关键：重置初始化状态
+    isInitialized = false
     cleanup()
     setupObserver()
   }
 
-  // 初始设置
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupObserver)
   } else {
@@ -118,7 +113,7 @@ const { id, title } = Astro.props
   }
   .markdown-body {
     font-family: var(--font-sans) !important;
-    font-size: 0.875rem !important;
+    font-size: 0.8rem !important;
   }
   .gt-container .gt-comment-body.markdown-body {
     color: var(--color-text-secondary) !important;
@@ -142,14 +137,17 @@ const { id, title } = Astro.props
 
   .dark .gt-header-textarea,
   .dark .gt-popup {
-    background-color: #181926 !important;
-    border-color: var(--color-border) !important;
+    background-color: #07090f !important;
+    border: 2px solid;
+    border-color: #24273a !important;
   }
   .dark .gt-container .gt-copyright {
-    border-color: var(--color-border) !important;
+    border-color: #24273a !important;
   }
   .dark .gt-comment-content {
-    background-color: #181926 !important;
+    border: 1px solid;
+    border-color: #24273a !important;
+    background-color: #07090f !important;
   }
   .dark .gt-comment-content:hover {
     -webkit-box-shadow: 0 0.625em 3.75em 0 #0f1d3c !important;
@@ -161,5 +159,16 @@ const { id, title } = Astro.props
 
   .gt-comments-null {
     display: none !important;
+  }
+
+  .gt-btn {
+    transition: transform 0.1s ease;
+    background-color: var(--color-bg) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-text) !important;
+  }
+
+  .gt-btn:hover {
+    transform: scale(1.02);
   }
 </style>
