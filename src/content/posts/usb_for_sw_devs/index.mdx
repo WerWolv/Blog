@@ -12,6 +12,8 @@ recommend: true
 
 import NotePanel from '@/NotePanel'
 import PencilUnderline from '@/PencilUnderline'
+import LocalDocumentLink from '@/LocalDocumentLink'
+
 import { Image } from 'astro:assets'
 import device_descriptor_imhex from './assets/device_descriptor_imhex.png';
 import usb_spec from './assets/usb_20.pdf'
@@ -40,7 +42,7 @@ Enumeration refers to the process of the host asking the device for information 
 
 ## Basic Information
 
-Even without a driver, plugging the phone into your computer will still make it get recognized as a USB device. That's because the <a href={usb_spec}>USB specification</a> defines a standard way for devices to identify themselves to the host, more on how that exactly works in a bit though.
+Even without a driver, plugging the phone into your computer will still make it get recognized as a USB device. That's because the <LocalDocumentLink document={usb_spec}>USB specification</LocalDocumentLink> defines a standard way for devices to identify themselves to the host, more on how that exactly works in a bit though.
 
 On Linux, we can use the handy `lsusb` tool to see what the device identified itself as:
 ```txt title="lsusb" frame="terminal" 
@@ -192,7 +194,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0000: 01 00 
 ```
 
-Those bytes came from the device itself! Decoding them <a href={`${usb_spec}#%5B%7B%22num%22%3A957%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D`}>using the specification</a> tells us that the first byte tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and the second byte means it does not support Remote Wakeup (meaning it cannot wake up the host). 
+Those bytes came from the device itself! Decoding them <LocalDocumentLink document={usb_spec} fragment="%5B%7B%22num%22%3A957%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">using the specification</LocalDocumentLink> tells us that the first byte tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and the second byte means it does not support Remote Wakeup (meaning it cannot wake up the host). 
 
 There are a few more standardized request types (and some devices even add their own for simple things!) but the main one we (and the OS too) are interested in is the `GET_DESCRIPTOR` request.
 
@@ -225,7 +227,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0010: 00 01 
 ```
 
-Now to decode this data, we need to look at the <a href={`${usb_spec}#%5B%7B%22num%22%3A978%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D`}>USB specification on Chapter 9.6.1 Device</a>. There we can find that the format looks as follows: 
+Now to decode this data, we need to look at the <LocalDocumentLink document={usb_spec} fragment="%5B%7B%22num%22%3A978%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">USB specification on Chapter 9.6.1 Device</LocalDocumentLink>. There we can find that the format looks as follows: 
 
 ```rust title="usb.hexpat"
 struct DeviceDescriptor {
