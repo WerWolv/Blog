@@ -282,8 +282,8 @@ export const ANALYTICS_CONFIG: AnalyticsConfig = {
     enabled: true,
   },
   umami: {
-    enabled: false,
-    websiteId: 'Your websiteId in umami',
+    enabled: true,
+    websiteId: 'bde54269-21f1-4b2a-80ba-cc7aa427f9bd',
     serverUrl: 'https://cloud.umami.is/script.js',
   },
 }
