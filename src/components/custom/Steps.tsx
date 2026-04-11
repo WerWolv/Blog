@@ -13,7 +13,7 @@ export default function Steps({ children, document, fragment = '' }: { children:
             content: "";
             position: absolute;
             left: -30px;
-            top: 18px;
+            top: 9px;
             width: 10px;
             height: 10px;
             border-radius: 50%;

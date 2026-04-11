@@ -17,13 +17,13 @@ The Surface Book 2 is one of Microsoft's self made notebooks. What makes it diff
 
 Since Windows any many other operating systems run on a ton of different hardware, it's impossible to bundle support for every device directly into the Kernel, however userspace programs may still want to communicate with hardware installed in the computer. Instead of adding custom system calls for every device ever built, most OSes support loading of kernel extensions at runtime (kernel modules on Linux, device drivers on Windows) together with a unified way to communicate with these extensions, called `ioctl`.
 
-The reason ioctl and device drivers are necessary in the first place is for security reasons. On startup all hardware devices found on- or connected to the computer's mainboard are mapped into the kernel's address space and have to be controled from there using extensions that live in the kernel's address space as well. The kernel's address space cannot be directly accessed by userspace applications so the kernel may allow access to certain devices through syscalls while denying access to others.
+The reason ioctl and device drivers are necessary in the first place is for security reasons. On startup all hardware devices found on- or connected to the computer's mainboard are mapped into the kernel's address space and have to be controlled from there using extensions that live in the kernel's address space as well. The kernel's address space cannot be directly accessed by userspace applications so the kernel may allow access to certain devices through syscalls while denying access to others.
 
 The greatness of `ioctl` comes from its simplicity. A single syscall is used on windows called `NtDeviceIoControlFile` with its wrapper function `DeviceIoControl`. It takes the following arguments:
 
 - A `HANDLE` to the device, usually obtained by using the `NtCreateFile` syscall
 - A control code describing the operation the device driver should execute. These codes consist of several fields:
-  - Device type (cdrom, mouse, network, printer, etc.) values `0x8000` or greater are vendor specific devices (for example the latch mechanism on the Surface Book 2)
+  - Device type (CD-ROM, mouse, network, printer, etc.) values `0x8000` or greater are vendor specific devices (for example the latch mechanism on the Surface Book 2)
   - Function code describing the command the device driver should execute. These are arbitrary values defined in the individual drivers.
   - Transfer type specifying if the data gets buffered or not
   - Required access for operations, either read-only, write-only or read-write
@@ -56,7 +56,7 @@ private static readonly IOControlCode g_detachChangedIoctl = new IOControlCode((
 private static readonly IOControlCode g_detachStateIoctl = new IOControlCode((ushort) 32768, (ushort) 2068, (IOControlAccessMode) 1, (IOControlBufferingMethod) 0);
 ```
 
-The interesing one here is only `g_latchCommandIoctl` though since `*ChangedIoctl` control codes are callbacks and `*StateIoctl` control codes are there to query information about the current latch state.
+The interesting one here is only `g_latchCommandIoctl` though since `*ChangedIoctl` control codes are callbacks and `*StateIoctl` control codes are there to query information about the current latch state.
 
 Looking further through the class led to a method conveniently named `void OpenLatch(uint cancelAfterMs)`. It does exactly what the name implies, it sends a ioctl command through the .NET Windows API opening the latch. It does not return any values but it takes in a struct of data as input buffer:
 
@@ -93,7 +93,7 @@ Or in plain text: `\\?\ACPI#MSHW0133#2&daba3ff&1#{f49e75f6-f869-4346-9eb8-ded248
 
 To finish off, I wanted to write a program in C/C++ which simply unlocks the latch when executed. Having all the information required from the binary, this was rather trivial:
 
-```cpp
+```cpp title="main.cpp"
 #include <windows.h>
 #include <cstdint>
 
@@ -106,16 +106,15 @@ enum class LatchCommandType : std::uint32_t {
     MaximumValue
 };
 
-struct LatchCommandInArgs {
+struct [[gnu::packed]] LatchCommandInArgs {
     LatchCommandType LatchCommand;
     std::uint32_t TimeoutMs;
-} __attribute__((packed));
+};
 
 // Latch command ioctl control code
-const DWORD latchCommandIoctl = CTL_CODE(0x8000, 2065, METHOD_BUFFERED, FILE_WRITE_ACCESS);
+constexpr DWORD latchCommandIoctl = CTL_CODE(0x8000, 2065, METHOD_BUFFERED, FILE_WRITE_ACCESS);
 
 int main() {
-
     // Open a handle to the latch device driver
     HANDLE ioctlLatchFile = CreateFileW (
         L"\\\\?\\ACPI#MSHW0133#2&daba3ff&1#{f49e75f6-f869-4346-9eb8-ded248275916}",
@@ -124,7 +123,8 @@ int main() {
         nullptr,
         OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL,
-        nullptr);
+        nullptr
+    );
 
     // Specify the device driver arguments sent through the in-buffer
     LatchCommandInArgs args = { .LatchCommand = LatchCommandType::ButtonPress, .TimeoutMs = 5000 };

@@ -12,15 +12,16 @@ license: 'CC-BY-NC-SA-4.0'
 ---
 
 import NotePanel from '@/NotePanel'
+import Steps from '@/Steps'
 
 ## Introduction
 
 I started this project mainly because I wanted a proper XP tracker I didn't have to pay extra for since the price felt really unjustifiable to me.
 
-This page explains how I used Visual C++ to write a DLL injector toolfor [RuneScape's](http://runescape.com/)
-NXT Client together with a DLL that hooks into RuneScape's OpenGL draw calls to render a [dear ImGui](https://github.com/ocornut/imgui) overlay on top of it.
+This page explains how I used Visual C++ to write a DLL injector tool for [RuneScape's](http://runescape.com/)
+NXT Client together with a DLL that hooks into RuneScape's OpenGL draw calls to render a [Dear ImGui](https://github.com/ocornut/imgui) overlay on top of it.
 
-![RuneScape with imGui Overlay](assets/cover.png)
+![RuneScape with ImGui Overlay](assets/cover.png)
 
 ## DLL Injecting
 
@@ -28,16 +29,26 @@ For the DLL Injector, I used a basic C++ `Console App` from Visual Studio. We do
 
 The principle of DLL injection is the following:
 
-    1. Find the PID of the process the DLL should be injected to.
-    2. Use the Windows API to get a Handle for that Process.
-    3. Allocate some memory in the target process and copy the DLL's path into it.
-    4. Start a new Thread in the target process with `LoadLibraryA` as the start routine.
+<Steps>
+    <div>
+        Find the PID of the process the DLL should be injected to.
+    </div>
+    <div>
+        Use the Windows API to get a Handle for that Process.
+    </div>
+    <div>
+        Allocate some memory in the target process and copy the DLL's path into it.
+    </div>
+    <div>
+        Start a new Thread in the target process with `LoadLibraryA` as the start routine.
+    </div>
+</Steps>
 
 In code, this looks like follows:
 
 ### Finding the PID
 
-```cpp
+```cpp title="main.cpp"
 std::uint32_t pid = 0;
 
 // Loop infinitely till RuneScape is launched
@@ -47,7 +58,7 @@ while (pid == 0) {
 }
 ```
 
-```cpp
+```cpp title="main.cpp"
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <cstdint>
@@ -102,10 +113,10 @@ This will give us a handle based on the PID with full access to that process. It
 
 ### Allocate memory in the target process
 
-This part is done in preparation for the next step. It's allocting memory in the remote process and places the DLL string inside of it.
+This part is done in preparation for the next step. It's allocating memory in the remote process and places the DLL string inside of it.
 This is needed since we need to call the LoadLibrary function there which takes in the path to the DLL to load.
 
-```cpp
+```cpp title="main.cpp"
 // Allocate memory in the remote process
 void *injectDllPathRemote = VirtualAllocEx(hProc, 0x00,
     MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -115,8 +126,8 @@ if (injectDllPathRemote == nullptr)
     return 1;
 
 // Write DLL path to the memory we just allocated
-constexpr const char *DllPath = "C:\\path\\to\\inject.dll";
-WriteProcessMemory(hProc, injectDllPathRemote, DllPath, strlen(dllPath) + 1, 0);
+constexpr auto DllPath = "C:\\path\\to\\inject.dll";
+WriteProcessMemory(hProc, injectDllPathRemote, DllPath, strlen(DllPath) + 1, 0);
 ```
 
 ### Starting the thread
@@ -125,7 +136,7 @@ Now we're putting everything together. Starting a thread in the RuneScape proces
 thread routine. This actually only works because of the nice coincidence that the signature of a `LPTHREAD_START_ROUTINE` is very similar to
 the one of `LoadLibraryA`. Both functions have a pointer as argument and a integer as return value. If there were more parameters to this function, it would get a lot more difficult to do DLL injection.
 
-```cpp
+```cpp title="main.cpp"
 // Create a thread in the RuneScape process which
 // runs LoadLibraryA("C:\\path\\to\\inject.dll")
 HANDLE hRemoteThread = CreateRemoteThread(hProc, nullptr, 0,
@@ -138,7 +149,7 @@ else
     printf("[*] Error starting thread! Error Code: %x\n", GetLastError());
 ```
 
-If `CreateRemoteThread`, we can now execute our code in the context of the target process allowing us to read it's memory directly, patch code and insert hooks. Now we have to make a DLL that handles the hooking.
+If `CreateRemoteThread` succeeds, we can now execute our code in the context of the target process allowing us to read its memory directly, patch code and insert hooks. Now we have to make a DLL that handles the hooking.
 
 ## Building the DLL
 
@@ -148,11 +159,11 @@ includes a basic template containing the DLL's `DllMain(...)` entry-point functi
 ### Running code
 
 To actually run our code in the Game, we need to start yet another thread. This is generally a bad idea
-since during `DllMain` runs, Windows' loader lock is held. This means many Windows calls that use the loader will cause the application to dead-lock. We don't use any of these functions here though so we're safe for the most part. In our case, a thread is definitely needed since `DllMain` blocks both our injector and API calls elsewhere in the target application. Therefor it has to run and finish quickly without blocking us.
+since during `DllMain` runs, Windows' loader lock is held. This means many Windows calls that use the loader will cause the application to dead-lock. We don't use any of these functions here though so we're safe for the most part. In our case, a thread is definitely needed since `DllMain` blocks both our injector and API calls elsewhere in the target application. Therefore it has to run and finish quickly without blocking us.
 
 Our DLL simply creates a new thread that runs our code when being loaded.
 
-```cpp
+```cpp title="main.cpp"
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
     switch (ul_reason_for_call) {
     case DLL_PROCESS_ATTACH: {
@@ -176,7 +187,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 For debug purposes it's usually useful to have some sort of logging in our application. Luckily, the Windows API once again got us covered. Using the `AllocConsole` function allows us to create a new console window in the current program. Make sure to not close this window though as closing it will act as a `SIGINT` exception, potentially crashing the game if exceptions don't get handled properly.
 
-```cpp
+```cpp title="main.cpp"
 AllocConsole();                             // Open a new console window
 FILE *f = new FILE();
 freopen_s(&f, "CONOUT$", "w", stdout);      // Redirect stdout to CONOUT$, the
@@ -189,19 +200,19 @@ printf("[*] Running under RuneScape!\n");   // Console works!
 
 The secret of drawing an overlay in any process is hooking the graphic library's "Frame End" function.
 In case of OpenGL this function is called `wglSwapBuffers`, in case of DirectX it's `d3dEndScene`.
-We simply let the Game draw all it's content and when it calls the function to end the current frame, we draw our overlay on top before calling the actual end frame function.
+We simply let the Game draw all its content and when it calls the function to end the current frame, we draw our overlay on top before calling the actual end frame function.
 
 <NotePanel type="info">
-  An easy way to find out what the Game you want to hook uses, is to load the Game executable into Ghidra and checking it's imports in the
+  An easy way to find out what the Game you want to hook uses, is to load the Game executable into Ghidra and checking its imports in the
   Symbol Tree.
 </NotePanel>
 ![Imports](assets/ghidra_imports.png)
 
-(RuneScape imports both opengl32.dll AND d3d9.dll here but according to the wiki, it only uses Direct3D if OpenGL is not working)
+(RuneScape imports both `opengl32.dll` AND `d3d9.dll` here but according to the wiki, it only uses Direct3D if OpenGL is not working)
 
 But how does hooking even work?
 
-A hook works by overwriting some instruction(s) in a functions code with a `jmp` instruction.
+A hook works by overwriting some instruction(s) in a function's code with a `jmp` instruction.
 
 ##### Before patching
 
@@ -211,16 +222,16 @@ A hook works by overwriting some instruction(s) in a functions code with a `jmp`
 
 ![Post Patching](assets/swapBuffers_post.png)
 
-This instruction will redirect execution flow to trampoline routine which first executes the instruction(s) we overwrote with the jump. Then we have to safe the current context. We don't know how our code modifies the registers but what we know is that after our code ran and execution gets back to the hooked function, they need to be in the same state as before our hook ran. Otherwise the original function might end up doing unpredictable things or just straight out crashes. This is usually done by pushing all registers onto the stack, executing the hook, poping all registers back into the right registers and then jumping back right after the injected `jmp` instruction in the original function.
+This instruction will redirect execution flow to trampoline routine which first executes the instruction(s) we overwrote with the jump. Then we have to save the current context. We don't know how our code modifies the registers but what we know is that after our code ran and execution gets back to the hooked function, they need to be in the same state as before our hook ran. Otherwise the original function might end up doing unpredictable things or just straight out crashes. This is usually done by pushing all registers onto the stack, executing the hook, popping all registers back into the right registers and then jumping back right after the injected `jmp` instruction in the original function.
 
-```asm
+```asm title="hooks.asm"
 PUBLIC wglSwapBuffersTrampoline
 
 wglSwapBuffersTrampoline PROC
 	mov [rsp + 20], rsi         ; Execute the instruction that
                                 ; was overwritten by our hook patch.
 
-	push rax                    ; Safe the current context.
+	push rax                    ; Save the current context.
 	push rbx                    ; Pushing all the registers is probably
 	push rcx                    ; overkill but better safe than sorry.
 	push rdx
@@ -256,9 +267,9 @@ wglSwapBuffersTrampoline PROC
 	pop rbx
 	pop rax
 
-	jmp wglSwapBuffers_return    ; Jump back to the original function.
+	jmp wglSwapBuffers_return   ; Jump back to the original function.
                                 ; This is the address of where our jmp
-                                ; instrction was inserted + 5, so immediately
+                                ; instruction was inserted + 5, so immediately
                                 ; after it.
 
 wglSwapBuffersTrampoline ENDP
@@ -267,7 +278,7 @@ wglSwapBuffersTrampoline ENDP
 Now that we have a place for our hook to jump to, we need to insert it into the function we want to hook.
 The following functions take care of removing code page write restrictions, inserting the hook and restoring the original restrictions again.
 
-```cpp
+```cpp title="mem.cpp"
 namespace mem {
 
     template<typename T>
@@ -311,14 +322,14 @@ namespace mem {
 
 Using this, a hook can be inserted as follows:
 
-```cpp
+```cpp title="main.cpp"
 using wglSwapBuffers_t = void(*)(_In_ HDC hDc);
 extern "C" wglSwapBuffers_t wglSwapBuffers_return = nullptr;
 extern "C" void wglSwapBuffersTrampoline();
 
 // ...
 
-// Get a handle to the opengl.dll
+// Get a handle to the opengl32.dll
 HMODULE hOpengl32 = GetModuleHandle(L"opengl32.dll");
 
 if (hOpengl32 != nullptr) {
@@ -326,7 +337,7 @@ if (hOpengl32 != nullptr) {
     DWORD64 wglSwapBuffersHookAddr = (DWORD64)GetProcAddress(hOpengl32,
         "wglSwapBuffers");
 
-    // Insert a hook to our trampolineat the start of wglSwapBuffers,
+    // Insert a hook to our trampoline at the start of wglSwapBuffers,
     // returns the address to return to
     wglSwapBuffers_return = (glSwapBuffers_t) mem::hookFunction(
         wglSwapBuffersHookAddr, (DWORD64)wglSwapBuffersTrampoline, 5
@@ -336,15 +347,15 @@ if (hOpengl32 != nullptr) {
 
 ### Drawing the overlay
 
-Finally, after all this work we can start drawing the imgui overlay.
-For this, we just download the imgui source code and compile it together with the rest of the DLL
-code. Imgui also needs a opengl wrapper to compile, I used glew for this. For it to compile, both the opengl32.lib and glew32**s**.lib have to be linked into the DLL. opengl32.lib gets dynamically linked as it's already been loaded by RuneScape but glew **HAS** to be linked statically since we can't load another DLL within the injected DLL without risking a dead-lock.
+Finally, after all this work we can start drawing the ImGui overlay.
+For this, we just download the ImGui source code and compile it together with the rest of the DLL
+code. ImGui also needs a OpenGL wrapper to compile, I used GLEW for this. For it to compile, both the `opengl32.lib` and `glew32s.lib` (note the `s` for static linking) have to be linked into the DLL. `opengl32.lib` gets dynamically linked as it's already been loaded by RuneScape but GLEW **HAS** to be linked statically since we can't load another DLL within the injected DLL without risking a dead-lock.
 
-Using the imgui impl files for win32 and opengl3 found in `examples` folder of it's repo, a simple overlay can be created. I used `imgui_impl_win32.h` and `imgui_impl_opengl3.h` for RuneScape but this depends heavily on what your game uses.
+Using the ImGui impl files for win32 and opengl3 found in the `examples` folder of it's repo, a simple overlay can be created. I used `imgui_impl_win32.h` and `imgui_impl_opengl3.h` for RuneScape but this depends heavily on what your game uses.
 
-During initialization of our graphics stuff, we also hook the game's wndProc callback. It's use for us is to capture keyboard and mouse events and direct them to imgui. It also allows us to toggle the overlay though and taking away focus from the game when the overlay is present.
+During initialization of our graphics stuff, we also hook the game's wndProc callback. It's use for us is to capture keyboard and mouse events and direct them to ImGui. It also allows us to toggle the overlay though and taking away focus from the game when the overlay is present.
 
-```cpp
+```cpp title="main.cpp"
 HWND hGameWindow;
 WNDPROC hGameWindowProc;
 bool menuShown = true;
@@ -367,7 +378,7 @@ LRESULT CALLBACK windowProc_hook(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 }
 
 void glSwapBuffers_hook(HDC hDc) {
-    // Initialize glew and imgui but only once
+    // Initialize GLEW and ImGui but only once
     static bool imGuiInitialized = false;
     if (!imGuiInitialized) {
         imGuiInitialized = true;
@@ -379,7 +390,7 @@ void glSwapBuffers_hook(HDC hDc) {
         hGameWindowProc = (WNDPROC)SetWindowLongPtr(hGameWindow,
             GWLP_WNDPROC, (LONG_PTR)windowProc_hook);
 
-        // Init glew, create imgui context, init imgui
+        // Init GLEW, create ImGui context, init ImGui
         glewInit();
         ImGui::CreateContext();
         ImGui_ImplWin32_Init(hGameWindow);
@@ -411,13 +422,13 @@ While it's pretty simple to inject a DLL, there are a lot of things that can go 
 
 ### LoadLibraryA fails with Access Denied
 
-This happened after adding glew to the DLL. I tried to dynamically link to glew.dll by loading it in my own DLL. This does not work as my DLL now depended on glew already being loaded. I fixed it by simply linking glew statically.
+This happened after adding GLEW to the DLL. I tried to dynamically link to `glew.dll` by loading it in my own DLL. This does not work as my DLL now depended on GLEW already being loaded. I fixed it by simply linking GLEW statically.
 
 ### Calling any function in the hook causes a segfault
 
 This was because I forgot to push/pop one register in the trampoline causing the context to be tainted
 when returning back to the original function. I also originally didn't replicate the instruction I overwrote with the jump which caused the stack to corrupt when the hooked function tried to return
 
-### Imgui doesn't receive any mouse input
+### ImGui doesn't receive any mouse input
 
 StackOverflow suggested to use `SetWindowLong` to overwrite the wndProc function. This did not work and my hook was never called. Switching to `SetWindowLongPtr` instead fixed the issues.

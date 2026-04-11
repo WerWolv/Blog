@@ -9,48 +9,64 @@ tags: ['Bare Metal', 'ARM', 'STM32']
 license: 'CC-BY-NC-SA-4.0'
 ---
 
+import Steps from '@/Steps'
+
 # Overview
 
-The STM32MP157C-DK2 is one of the latest dev boards by ST Microelectronics. It features a STM32MP1 SoC with two ARM A7 cores and one M4 co-processor core. The intended way of using this SoC according to STM is to run their custom, pre-built Linux distribution, toolchain, SDK and proprietary flash tools. Their [wiki](https://www.st.com/content/st_com/en/wiki/wiki-portal.html) does a great job at not telling you a lot of important details because STM's linux distro "takes care of that".
+The `STM32MP157C-DK2` is one of the latest dev boards by ST Microelectronics. It features a STM32MP1 SoC with two ARM A7 cores and one M4 co-processor core. The intended way of using this SoC according to STM is to run their custom, pre-built Linux distribution, toolchain, SDK and proprietary flash tools. Their [Wiki](https://www.st.com/content/st_com/en/wiki/wiki-portal.html) does a great job at not telling you a lot of important details because STM's linux distro "takes care of that".
 This post however deals with all the dirty details about how the entire boot process works and how to bring the DK2 board into a state where a custom kernel can be loaded.
 
 # Power on
 
 When the board gets plugged in, the first thing happening is the STPMIC1 power management IC initializing it's output voltages to the default settings. According to its [datasheet](https://www.st.com/resource/en/datasheet/stpmic1.pdf) and the [board schematics](https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group0/36/8e/ea/7a/ca/ca/4b/e4/mb1272-dk2-c01_schematic/files/MB1272-DK2-C01_Schematic.pdf/jcr:content/translations/en.MB1272-DK2-C01_Schematic.pdf), this means the core gets powered with 1.2V, the DDR RAM with 1.1V and the rest of the SoC peripherals with 3.3V.
 
-Once the voltage has stabilized, the bootROM starts running and determines where to boot from by reading either the BOOT0 and BOOT1 pin or a value burnt into the OTP efuses. Possible boot sources are NAND and NOR flash, eMMC, Serial and SD cards. The DK2 uses the SD card by default as no other sources can be found on the board.
+Once the voltage has stabilized, the Boot ROM starts running and determines where to boot from by reading either the `BOOT0` and `BOOT1` pin or a value burnt into the OTP eFuses. Possible boot sources are NAND and NOR flash, eMMC, Serial and SD cards. The DK2 uses the SD card by default as no other sources can be found on the board.
 
 # SD card content
 
 ## GPT
 
-The bootROM now tries to boot from the SD card. The SD card must contain a GPT containing two partitions named `fsbl1` and `fsbl2`. These are two, hopefully identical, copies of the First Stage bootloader the bootROM will later execute.
+The Boot ROM now tries to boot from the SD card. The SD card must contain a GPT containing two partitions named `fsbl1` and `fsbl2`. These are two, hopefully identical, copies of the First Stage bootloader the Boot ROM will later execute.
 
 ## FSBL
 
-For the bootROM to recognize and load the fsbl (or in fact any binary), a special format is used. It is described as the [STM32 header for binary files](https://wiki.st.com/stm32mpu/wiki/STM32_header_for_binary_files) and consists of a 256 bytes long header followed by the binary data to load.
+For the Boot ROM to recognize and load the FSBL (or in fact any binary), a special format is used. It is described as the [STM32 header for binary files](https://wiki.st.com/stm32mpu/wiki/STM32_header_for_binary_files) and consists of a 256 bytes long header followed by the binary data to load.
 
 ![STM32 header](https://wiki.st.com/stm32mpu/nsfr_img_auth.php/4/4c/STM32_header.png)
 
-The following code is a python script which generates a correct header for any given fsbl binary:
+The following code is a python script which generates a correct header for any given FSBL binary:
 
 ```python
 header = struct.pack("<4sQQQQQQQQIIIIIIIIIIQQQQQQQQ83xb",
-    b"STM\x32",                                       # Header magic
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   # ECDSA signature, unsigned here
-    sum(payload),                                     # Checksum of payload, sum of all bytes
-    0x00010000,                                       # Header version 1.0
-    len(payload),                                     # Length of payload
-    0x2FFC0000 + 0x2400 + 0x100,                      # Entrypoint address. SYSRAM + 0x2400 (BROM data) + 0x100 (header)
-    0x00,                                             # Reserved
-    0x2FFC0000 + 0x2400 + 0x100,                      # Load address of image, unused
-    0x00,                                             # Reserved
-    0x00,                                             # Image version
-    0x01,                                             # Option flags, disable signature verification
-    0x01,                                             # ECDSA algorithm set to P-256 NIST, unused
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   # ECDSA signature, unsigned here
-    0x00                                              # Binary type: U-Boot
-    )
+  # Header magic
+  b"STM\x32",                 
+  # ECDSA signature, unsigned here                      
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  # Checksum of payload, sum of all bytes   
+  sum(payload),
+  # Header version 1.0                                     
+  0x00010000,
+  # Length of payload                                       
+  len(payload),
+  # Entrypoint address. SYSRAM + 0x2400 (BROM data) + 0x100 (header)                                     
+  0x2FFC0000 + 0x2400 + 0x100,
+  # Reserved                      
+  0x00,
+  # Load address of image, unused                                             
+  0x2FFC0000 + 0x2400 + 0x100,
+  # Reserved                      
+  0x00,
+  # Image version                                             
+  0x00,
+  # Option flags, disable signature verification                                             
+  0x01,
+  # ECDSA algorithm set to P-256 NIST, unused                                             
+  0x01,
+  # ECDSA signature, unsigned here                                             
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  # Binary type: U-Boot   
+  0x00
+)
 ```
 
 Some information about the header:
@@ -59,12 +75,12 @@ Some information about the header:
 - The checksum is calculated by summing up all bytes in the payload mod `0xFFFF'FFFF` to get a 32 bit value
 - The binary always gets loaded to address `0x2FFC'2400`, no matter what load address was specified in the header.
   - The STM32MP1's so called `SYSRAM` starts at address `0x2FFC'0000`
-  - The bootROM will use the first `0x2400` bytes of the `SYSRAM` for its own data segment. Besides the bootROM's execution data, it also stores multiple structs in there containing various boot information such as boot device, retries, etc.
-- The entry point value is the 32 bit address the bootROM will jump to if validation succeeded.
-  - For this binary, execution should start at the beginning of the `.text` segment which is located directly after the header. Therefore the entry point is at `0x2FFC0000 + 0x2400 + 0x100` (`addressof(SYSRAM) + sizeof(.data_bootROM) + sizeof(STM32Header)`)
+  - The Boot ROM will use the first `0x2400` bytes of the `SYSRAM` for its own data segment. Besides the Boot ROM's execution data, it also stores multiple structs in there containing various boot information such as boot device, retries, etc.
+- The entry point value is the 32 bit address the Boot ROM will jump to if validation succeeded.
+  - For this binary, execution should start at the beginning of the `.text` segment which is located directly after the header. Therefore the entry point is at `0x2FFC0000 + 0x2400 + 0x100` (`addressof(SYSRAM) + sizeof(.data_BootROM) + sizeof(STM32Header)`)
 
-Once the image was verified, copied and the bootROM jumped to the start of the fsbl's .text section, the real fun starts.
-Important to note is that the bootROM does not have a proper ELF loader or anything. The binary is simply `memcpy`'d into `SYSRAM`. Therefore things like `.bss` segments will not be expanded automatically. These sections need to be expanded statically beforehand to work properly.
+Once the image was verified, copied and the Boot ROM jumped to the start of the FSBL's .text section, the real fun starts.
+Important to note is that the Boot ROM does not have a proper ELF loader or anything. The binary is simply `memcpy`'d into `SYSRAM`. Therefore things like `.bss` segments will not be expanded automatically. These sections need to be expanded statically beforehand to work properly.
 
 The only setup to do now is to update the `SP` to point to `0x3000'0000`, the end of `SYSRAM`.
 
@@ -74,16 +90,32 @@ The only setup to do now is to update the `SP` to point to `0x3000'0000`, the en
 
 For the longest time of this project my testing cycle looked as follows:
 
-```
-  - Writing code
-  - Compiling source code with make
-  - Generating a MBR SD card image with genimage
-  - Downloading that image from my build server
-  - Flashing it to an SD card using balenaEtcher
-  - Inserting the SD card into the board
-  - Resetting the board
-  - Hoping that one of the two LEDs used for debugging would light up
-```
+<Steps>
+<div>
+Writing code
+</div>
+<div>
+Compiling source code with `make`
+</div>
+<div>
+Generating a MBR SD card image with `genimage`
+</div>
+<div>
+Downloading that image from my build server
+</div>
+<div>
+Flashing it to an SD card using balenaEtcher
+</div>
+<div>
+Inserting the SD card into the board
+</div>
+<div>
+Resetting the board
+</div>
+<div>
+Hoping that one of the two LEDs used for debugging would light up
+</div>
+</Steps>
 
 This process usually took between 2 and 3 minutes and the only way to debug things was extracting two bits of information at the time using the two on-board LEDs. This time is luckily over thanks to the amazing [OpenOCD](https://github.com/ntfreak/openocd) project. OpenOCD is an open source embedded debugging software providing the ability to interface with many different debugging interfaces such as JTAG and ST-Link. Additionally it integrates a gdb-server which can be used control, program and debug the connected SoC though GDB. This ultimately allows for one click building, flashing and debugging right within VSCode:
 
@@ -92,7 +124,7 @@ This process usually took between 2 and 3 minutes and the only way to debug thin
 Getting OpenOCD to run properly is really easy thanks to a bunch of pre-made scripts.
 
 ```sh
-  $ openocd -f $OPENOCD_SCRIPTS/board/stm32mp15x_dk2.cfg -c "gdb_flash_program enable"
+$ openocd -f $OPENOCD_SCRIPTS/board/stm32mp15x_dk2.cfg -c "gdb_flash_program enable"
 ```
 
 The first part is the debug config for the dk2 board. When using a custom board with an MP1 on board, `-f $OPENOCD_SCRIPTS/target/stm32mp15x.cfg -f $OPENOCD_SCRIPTS/interface/stlink-dap.cfg` can be used instead. At the time of writing this, they are not in the latest release and require OpenOCD to be built from sources (or using the AUR package `openocd-git`). `-c "gdb_flash_program enable"` is necessary for gdb to be able to flash the executable to the board.
@@ -151,20 +183,20 @@ The easiest way to indicate a sign of life is always to light up an LED. The STM
 
 To set up the GPIO pins now, the following steps need to be done.
 
-First, the GPIO clock needs to be enabled. This is done by setting the respective bit in the right `RCC_MP_AXXXENSETR` register. The reference manual shows, RCC_MP_AHB4ENSETR contains all the bits for the GPIOA to GPIOK clocks.
+First, the GPIO clock needs to be enabled. This is done by setting the respective bit in the right `RCC_MP_AXXXENSETR` register. The reference manual shows, `RCC_MP_AHB4ENSETR` contains all the bits for the `GPIOA` to `GPIOK` clocks.
 
-Next, the GPIO pins need to be configured. The relevant registers for this are GPIOX_MODER, GPIOX_OTYPER, GPIOX_OSPEEDR and GPIOX_PUPDR.
+Next, the GPIO pins need to be configured. The relevant registers for this are `GPIOX_MODER`, `GPIOX_OTYPER`, `GPIOX_OSPEEDR` and `GPIOX_PUPDR`.
 
-**GPIOX_MODER** contains the mode of all pins in this port. Since the pin needs to be able to drive an LED, this should be set to Output mode.
+**`GPIOX_MODER`** contains the mode of all pins in this port. Since the pin needs to be able to drive an LED, this should be set to Output mode.
 
-**GPIOX_OTYPER** contains the output type of that pin. It may be either Push-Pull or Open-Drain. Looking at the schematics once again, the LED's annode is connected to the GPIO pin and the cathode directly to ground.
+**`GPIOX_OTYPER`** contains the output type of that pin. It may be either Push-Pull or Open-Drain. Looking at the schematics once again, the LED's annode is connected to the GPIO pin and the cathode directly to ground.
 This means to light the LED up, a current needs to flow out of the GPIO pin, through the LED into ground. This can only be achieved using the Push-Pull configuration.
 
-**GPIOX_OSPEEDR** is the speed at which the pin needs to be able to respond. Higher values here will cause a higher current flow and possible reflections if the line is not properly matched. For an LED though, this all doesn't really matter so it can be safely set to Low or Medium speed.
+**`GPIOX_OSPEEDR`** is the speed at which the pin needs to be able to respond. Higher values here will cause a higher current flow and possible reflections if the line is not properly matched. For an LED though, this all doesn't really matter so it can be safely set to Low or Medium speed.
 
-Finally **GPIOX_PUPDR** defines whether a pullup, pulldown or no resistor at all should be used. In Push-Pull mode, this is generally unwanted and should be set to no pullup.
+Finally **`GPIOX_PUPDR`** defines whether a pullup, pulldown or no resistor at all should be used. In Push-Pull mode, this is generally unwanted and should be set to no pullup.
 
-This finishes up the configuration of the GPIO pin. To make the LEDs light up now, the bit in the **GPIOX_ODR** register corresponding to that pin needs to be set to pull the pin to VDD voltage. And that's it!
+This finishes up the configuration of the GPIO pin. To make the LEDs light up now, the bit in the **`GPIOX_ODR`** register corresponding to that pin needs to be set to pull the pin to VDD voltage. And that's it!
 
 # What now?
 
@@ -255,7 +287,7 @@ These are the notes I took while reading the wiki, reverse engineering u-boot, s
 
 ## Serial Console boot Dump
 
-```
+```txt frame="terminal"
 U-Boot 2020.04 (Jul 03 2020 - 20:11:15 +0200)
 
 CPU: STM32MP157CAC Rev.B
