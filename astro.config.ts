@@ -18,6 +18,9 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     assetsInclude: ['**/*.pdf'],
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.jsx', '.astro', '.mdx'],
+    },
   },
   markdown: {
     syntaxHighlight: false,
