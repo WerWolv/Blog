@@ -2,9 +2,9 @@
 @import 'rehype-callouts/theme/vitepress';
 @import url('https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
 
-/* ===== CSS自定义属性 (现代化设计) ===== */
+/* ===== CSS Custom Properties (Modern Design) ===== */
 :root {
-  /* 颜色系统 - 使用 light-dark() 函数 */
+  /* Color system - using light-dark() */
   --color-text-primary: light-dark(#0a0a0a, #d5d5d6);
   --color-text-secondary: light-dark(#52525b, #a1a1aa);
   --color-text-muted: light-dark(#6b7280, #9ca3af);
@@ -13,25 +13,25 @@
   --color-link-hover: light-dark(#1f2937, #f3f4f6);
   --color-anchor: light-dark(#6366f1, #818cf8);
 
-  /* 背景颜色 */
+  /* Background colors */
   --color-bg-inline-code: light-dark(#f1f3f5, #1e1e20);
   --color-text-inline-code: light-dark(#3b4252, #c9d1d9);
   --color-bg-polaroid: #ffffff;
 
-  /* 边框颜色 */
+  /* Border colors */
   --color-border-light: light-dark(#e9edf2, #2b2b30);
   --color-border-medium: light-dark(#555, #555);
   --color-border-blockquote: light-dark(#e6ebf2, #3a3a40);
 
-  /* 阴影 */
+  /* Shadows */
   --shadow-polaroid: 0 5px 15px rgb(0 0 0 / 0.15);
   --shadow-polaroid-hover: 0 8px 20px rgb(0 0 0 / 0.2);
   --shadow-polaroid-dark: 0 5px 15px rgb(0 0 0 / 0.3);
 
-  /* 字体 */
+  /* Fonts */
   --font-family-handwritten: 'Comic Sans MS', cursive;
 
-  /* 间距系统 */
+  /* Spacing system */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -40,27 +40,27 @@
   --space-2xl: 2.5rem;
   --space-3xl: 3rem;
 
-  /* 圆角 */
+  /* Border radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
 
-  /* 动画 */
+  /* Animation */
   --transition-fast: 0.3s ease;
   --transition-medium: 0.3s ease-in-out;
 }
 
-/* ===== 基础样式重置 ===== */
+/* ===== Base Style Reset ===== */
 .markdown {
   color: var(--color-text-secondary);
   font-size: 1rem;
   line-height: 1.75;
 
-  /* 现代文本换行 */
+  /* Modern text wrapping */
   & :is(p, li, blockquote) {
     text-wrap: wrap;
   }
 
-  /* 移除默认边距 */
+  /* Remove default margins */
   & > :first-child {
     margin-block-start: 0;
   }
@@ -69,29 +69,24 @@
   }
 }
 
-/* ===== 标题样式 (使用逻辑属性) ===== */
+/* ===== Heading Styles (Using Logical Properties) ===== */
 .markdown {
   & :is(h1, h2, h3, h4, h5, h6) {
     color: var(--color-heading);
     font-family: var(--font-sans);
     font-weight: 600;
     scroll-margin-top: 6rem;
-
-    /* 统一的标题锚点样式 */
-    &:is(:hover, :focus) .header-anchor {
-      opacity: 0.6;
-    }
   }
 
   & h1 {
     font-size: clamp(1.75em, 4vw, 2em);
-    margin-block: 0 1em;
+    margin-block: 1.5em 0.5em;
     line-height: 1.1111111;
   }
 
   & h2 {
     font-size: clamp(1.375em, 3vw, 1.5em);
-    margin-block: 1.5em 0.75em;
+    margin-block: 1.5em 0.5em;
     line-height: 1.3333333;
   }
 
@@ -107,12 +102,12 @@
     line-height: 1.4;
   }
 
-  /* 连续标题间距优化 */
+  /* Optimize spacing between consecutive headings */
   & :is(h1, h2, h3, h4, h5, h6) + :is(h1, h2, h3, h4, h5, h6) {
     margin-block-start: 0.75em;
   }
 
-  /* 层级递进标题（更紧密） */
+  /* Hierarchical heading progression (tighter) */
   & h1 + h2,
   & h2 + h3,
   & h3 + h4,
@@ -121,7 +116,7 @@
     margin-block-start: 0.5em;
   }
 
-  /* 同级标题（稍宽松） */
+  /* Same-level headings (slightly looser) */
   & h2 + h2,
   & h3 + h3,
   & h4 + h4 {
@@ -129,7 +124,7 @@
   }
 }
 
-/* ===== 文本内容样式 ===== */
+/* ===== Text Content Styles ===== */
 .markdown {
   & p {
     margin-block: 1.25em;
@@ -146,7 +141,7 @@
     font-size: 1.05em;
   }
 
-  /* 链接样式 */
+  /* Link styles */
   & a:not(.card-github) {
     color: var(--color-link);
     text-decoration: none;
@@ -157,14 +152,14 @@
       border-block-end-color: var(--color-border-medium);
     }
 
-    /* 代码链接 */
+    /* Code links */
     & code {
       color: inherit;
     }
   }
 }
 
-/* ===== 列表样式 (现代化伪元素) ===== */
+/* ===== List Styles (Modern Pseudo Elements) ===== */
 .markdown {
   & :is(ol, ul) {
     margin-block: 1.25em;
@@ -177,7 +172,7 @@
     padding-inline-start: 1.25em;
   }
 
-  /* 有序列表 */
+  /* Ordered lists */
   & ol > li::before {
     content: counter(list-item) '.';
     position: absolute;
@@ -185,7 +180,7 @@
     font-weight: 400;
   }
 
-  /* 无序列表 */
+  /* Unordered lists */
   & ul > li::before {
     content: '';
     position: absolute;
@@ -198,13 +193,13 @@
     opacity: 0.8;
   }
 
-  /* 嵌套列表 */
+  /* Nested lists */
   & :is(ul, ol) :is(ul, ol) {
     margin-block: 0.75em;
   }
 }
 
-/* ===== 任务列表 ===== */
+/* ===== Task Lists ===== */
 .markdown {
   & ul.contains-task-list {
     padding-inline-start: 0;
@@ -236,7 +231,7 @@
   }
 }
 
-/* ===== 引用块样式 ===== */
+/* ===== Blockquote Styles ===== */
 .markdown {
   & blockquote {
     font-weight: 500;
@@ -267,9 +262,9 @@
   }
 }
 
-/* ===== 代码样式 ===== */
+/* ===== Code Styles ===== */
 .markdown {
-  /* 行内代码 */
+  /* Inline code */
   & :where(code):not(:where(pre *, a *)) {
     background-color: var(--color-bg-inline-code);
     color: var(--color-text-inline-code);
@@ -281,7 +276,7 @@
     font-weight: 500;
   }
 
-  /* 代码块 */
+  /* Code blocks */
   & pre {
     overflow-x: auto;
     font-size: 0.9375em;
@@ -308,7 +303,7 @@
   }
 }
 
-/* ===== 图片和媒体样式 ===== */
+/* ===== Image and Media Styles ===== */
 .markdown {
   & img {
     margin-block: var(--space-xl);
@@ -316,19 +311,19 @@
     will-change: transform, filter;
     transition: filter var(--transition-fast);
 
-    /* Medium Zoom 图片过渡 */
+    /* Medium Zoom image transition */
     &.medium-zoom-image {
       transition:
         filter var(--transition-fast),
         transform var(--transition-fast) !important;
     }
 
-    /* 暗色主题滤镜（基础为明亮模式，暗色在下方 .dark 覆盖） */
+    /* Dark theme filter (base is light mode, overridden by .dark below) */
     &:not(.noDarken) {
       filter: none;
     }
 
-    /* hover时临时移除滤镜 */
+    /* Temporarily remove filter on hover */
     &:hover:not(.medium-zoom-image--opened):not(.noDarken) {
       filter: none !important;
     }
@@ -363,7 +358,7 @@
   filter: brightness(0.9) contrast(1.08);
 }
 
-/* ===== 表格样式 ===== */
+/* ===== Table Styles ===== */
 .markdown {
   & table {
     width: 100%;
@@ -418,7 +413,7 @@
   }
 }
 
-/* ===== 拍立得风格图片 (自定义元素) ===== */
+/* ===== Polaroid-style Images (Custom Elements) ===== */
 image-div-polaroid {
   display: flex;
   justify-content: center;
@@ -460,32 +455,26 @@ image-figure-polaroid {
   box-shadow: var(--shadow-polaroid-dark);
 }
 
-/* ===== 分割线样式 ===== */
+/* ===== Divider Styles ===== */
 .markdown hr {
   border: none;
   border-block-start: 1px solid var(--color-border-light);
   margin-block: var(--space-xl) auto;
 }
 
-/* ===== 锚点链接样式 ===== */
+/* ===== Anchor Link Styles ===== */
 .markdown a.header-anchor {
-  float: inline-start;
-  margin-inline-start: -1.5em;
-  border: none !important;
-  opacity: 0;
-  font-size: 0.7em;
-  text-decoration: none;
-  color: var(--color-anchor);
-  transition: opacity var(--transition-fast);
+  color: var(--color-heading);
+  transition: color var(--transition-fast);
+  text-decoration: none !important;
+  border: none;
 
   &:is(:hover, :focus) {
-    text-decoration: none;
-    color: var(--color-anchor);
-    opacity: 1;
+    color: var(--color-text-secondary);
   }
 }
 
-/* ===== 脚注样式 ===== */
+/* ===== Footnote Styles ===== */
 .markdown .footnotes {
   margin-block-start: var(--space-3xl);
   font-size: 0.875em;
@@ -520,7 +509,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 详情/摘要样式 ===== */
+/* ===== Details/Summary Styles ===== */
 .markdown {
   & details {
     margin-block: 1.25em;
@@ -540,7 +529,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 特殊组件样式 ===== */
+/* ===== Special Component Styles ===== */
 /* Medium Zoom */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
@@ -633,7 +622,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 响应式设计 ===== */
+/* ===== Responsive Design ===== */
 @media (width <= 768px) {
   image-figure-polaroid {
     margin-inline: 10%;
@@ -641,10 +630,6 @@ image-figure-polaroid {
 
   .markdown {
     font-size: 0.9375rem;
-
-    & a.header-anchor {
-      font-size: 0.75em;
-    }
 
     & table {
       display: block;
@@ -680,7 +665,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 容器查询 (现代CSS) ===== */
+/* ===== Container Queries (Modern CSS) ===== */
 @container (width <= 600px) {
   .markdown {
     & h1 {
@@ -695,7 +680,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 主题切换支持 ===== */
+/* ===== Theme Toggle Support ===== */
 .img-light {
   display: block;
 }
@@ -712,7 +697,7 @@ image-figure-polaroid {
   display: block;
 }
 
-/* ===== KaTeX 数学公式适配 ===== */
+/* ===== KaTeX Math Styling ===== */
 .markdown .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
@@ -731,7 +716,7 @@ image-figure-polaroid {
   }
 }
 
-/* ===== 外部链接样式 ===== */
+/* ===== External Link Styles ===== */
 .new-tab-icon {
   margin-inline-start: 0.1rem;
   margin-block-end: 0.3rem;
@@ -742,7 +727,7 @@ image-figure-polaroid {
   cursor: var(--external-link-cursor);
 }
 
-/* ===== 徽章样式 ===== */
+/* ===== Badge Styles ===== */
 .rds-badge {
   display: inline-block;
   padding: 0.125rem 0.375rem;
@@ -767,7 +752,7 @@ image-figure-polaroid {
   background-color: #fecaca;
 }
 
-/* ===== 链接图标样式 ===== */
+/* ===== Link Icon Styles ===== */
 :is([data-link='github-acct'], [data-link='github-repo'], [data-link='custom-url'], [data-link='npm-pkg']) > img {
   display: inline-block;
   inline-size: 1em;
@@ -778,7 +763,7 @@ image-figure-polaroid {
   margin-block-end: 0.1em;
 }
 
-/* ===== 视频样式 ===== */
+/* ===== Video Styles ===== */
 .rds-video {
   z-index: 150;
   position: relative;
@@ -788,7 +773,7 @@ image-figure-polaroid {
   transform: scale(1, 1) !important;
 }
 
-/* ===== 减少动画偏好设置 ===== */
+/* ===== Reduced Motion Preference ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -803,14 +788,14 @@ image-figure-polaroid {
   }
 }
 
-/* 文章正文里的链接自动换行 */
+/* Automatically wrap links in article body */
 .markdown a {
   overflow-wrap: anywhere;
   word-break: break-word;
   white-space: normal;
 }
 
-/* 如果链接出现在代码块或内联代码里 */
+/* If links appear in code blocks or inline code */
 .markdown pre,
 .markdown code {
   white-space: pre-wrap;

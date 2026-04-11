@@ -65,7 +65,7 @@ export const rehypePlugins = [
   [
     rehypeAutolinkHeadings,
     {
-      behavior: 'append',
+      behavior: 'wrap',
       properties: (el: Parameters<CreateProperties>[0]) => {
         let text = ''
         visit(el, 'text', (textNode) => {
@@ -77,13 +77,7 @@ export const rehypePlugins = [
           'aria-label': text ? `Link to ${text}` : undefined,
         }
       },
-      content: (heading: any) => {
-        const level = heading.tagName[1]
-        return {
-          type: 'text',
-          value: 'h' + level,
-        }
-      },
+      content: undefined,
     },
   ],
   [rehypeCallouts, { theme: 'vitepress' }],
