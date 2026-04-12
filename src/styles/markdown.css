@@ -279,7 +279,7 @@
   /* Code blocks */
   & pre {
     overflow-x: auto;
-    font-size: 0.9375em;
+    font-size: 0.9em;
     line-height: 1.7142857;
     margin-block: 1.7142857em;
     border-radius: var(--radius-md);
@@ -651,7 +651,7 @@ image-figure-polaroid {
     & pre {
       margin-block: 1.5em;
       padding: 1em;
-      font-size: 0.875em;
+      font-size: 0.8em;
     }
 
     & blockquote {
