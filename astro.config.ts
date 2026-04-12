@@ -7,6 +7,7 @@ import robotsTxt from 'astro-robots-txt'
 import expressiveCode from 'astro-expressive-code'
 import { remarkPlugins, rehypePlugins } from './plugins'
 import { SITE } from './src/config'
+import fs from 'fs'
 
 export default defineConfig({
   site: SITE.website,
@@ -27,5 +28,15 @@ export default defineConfig({
     remarkPlugins,
     rehypePlugins,
   },
-  integrations: [expressiveCode(), mdx(), react(), sitemap(), robotsTxt()],
+  integrations: [
+    expressiveCode({
+      shiki: {
+        langs: [JSON.parse(fs.readFileSync('./src/syntax/pl.tmLanguage.json', 'utf-8'))],
+      },
+    }),
+    mdx(),
+    react(),
+    sitemap(),
+    robotsTxt(),
+  ],
 })

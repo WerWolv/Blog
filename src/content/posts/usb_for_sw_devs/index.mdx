@@ -229,7 +229,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 
 Now to decode this data, we need to look at the <LocalDocumentLink document={usb_spec} fragment="%5B%7B%22num%22%3A978%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">USB specification on Chapter 9.6.1 Device</LocalDocumentLink>. There we can find that the format looks as follows: 
 
-```rust title="usb.hexpat"
+```pl title="usb.hexpat"
 struct DeviceDescriptor {
     u8  bLength;
     u8  bDescriptorType;
