@@ -80,6 +80,12 @@ export const SOCIAL_LINKS: SocialLink[] = [
     icon: 'icon-[ri--twitter-fill]',
     hoverColor: '#1DA1F2',
   },
+  {
+    name: 'mail',
+    url: 'mailto:hey@werwolv.net',
+    icon: 'icon-[lets-icons--e-mail]',
+    hoverColor: 'text-primary',
+  },
 ]
 
 /**
