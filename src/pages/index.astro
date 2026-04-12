@@ -55,6 +55,13 @@ if (hasPinnedPosts) {
       </a>
       <p class="text-muted-foreground mb-6 mt-1">Most relevant posts, worth a look.</p>
       <List posts={showPosts} {type} coverLayout={POSTS_CONFIG.homePageConfig?.coverLayout} />
+      <a
+        href={`/posts`}
+        class="hidden sm:inline-flex mt-2 items-center gap-2 text-sm font-medium text-foreground/60 hover:text-primary transition-colors group/read float-right"
+      >
+        More Blog Posts
+        <span class="icon-[ph--arrow-right] size-4 transition-transform group-hover/read:translate-x-1"></span>
+      </a>
     </div>
     {
       ENABLED && (
