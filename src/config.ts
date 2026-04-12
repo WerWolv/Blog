@@ -63,16 +63,22 @@ export const SOCIAL_LINKS: SocialLink[] = [
     hoverColor: 'text-primary',
   },
   {
-    name: 'twitter',
-    url: 'https://twitter.com/WerWolv',
-    icon: 'icon-[ri--twitter-fill]',
-    hoverColor: '#1DA1F2',
-  },
-  {
     name: 'discord',
     url: 'https://discordapp.com/users/181738643008782346',
     icon: 'icon-[ri--discord-fill]',
     hoverColor: '#5865F2',
+  },
+  {
+    name: 'bsky',
+    url: 'https://bsky.app/profile/werwolv.net',
+    icon: 'icon-[ri--bluesky-fill]',
+    hoverColor: '#0886FE',
+  },
+  {
+    name: 'twitter',
+    url: 'https://twitter.com/WerWolv',
+    icon: 'icon-[ri--twitter-fill]',
+    hoverColor: '#1DA1F2',
   },
 ]
 
