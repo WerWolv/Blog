@@ -66,13 +66,13 @@ export const SOCIAL_LINKS: SocialLink[] = [
     name: 'twitter',
     url: 'https://twitter.com/WerWolv',
     icon: 'icon-[ri--twitter-fill]',
-    hoverColor: 'text-sky-400',
+    hoverColor: '#1DA1F2',
   },
   {
     name: 'discord',
     url: 'https://discordapp.com/users/181738643008782346',
     icon: 'icon-[ri--discord-fill]',
-    hoverColor: 'text-indigo-400',
+    hoverColor: '#5865F2',
   },
 ]
 
