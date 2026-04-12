@@ -30,7 +30,7 @@ The layout of the system image looks as follows:
 
 When the JZ4770 is powered up, it first start executing it's Boot ROM. The Boot ROM reads the boot select pins and determines on the RG350 that it's supposed to boot from an MMC device, here an SD card.
 
-The Boot ROM proceedes by copying the first 0x2000 bytes on the SD card into the SoCs dcache and deinitializing the MMC interface again. To validate if the read data is correct, the Boot ROM skips past the MBR, right to the first stage bootloader, and checks for the magic value `MSPL`. If valid, the 0x2000 bytes previously loaded into dcache are copied into icache where the Boot ROM jumps into. This is possible due to the unique fact that the JZ4770s cache is mapped into the address space at address `0x8000'0000`.
+The Boot ROM proceeds by copying the first 0x2000 bytes on the SD card into the SoCs dcache and deinitializing the MMC interface again. To validate if the read data is correct, the Boot ROM skips past the MBR, right to the first stage bootloader, and checks for the magic value `MSPL`. If valid, the 0x2000 bytes previously loaded into dcache are copied into icache where the Boot ROM jumps into. This is possible due to the unique fact that the JZ4770s cache is mapped into the address space at address `0x8000'0000`.
 
 ## MBR and bootstrapper
 

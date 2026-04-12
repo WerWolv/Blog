@@ -24,7 +24,7 @@ Say you're being handed a USB device and told to write a driver for it. Seems li
 
 <PencilUnderline color="orange">None of this is actually true though</PencilUnderline>. Writing a driver for a USB device is actually not much more difficult than writing an application that uses Sockets.
 
-This post aims to be a high level introduction to using USB for people who may not have worked with Hardware too much yet and just want to use the technology. There are amazing resources out there such as [USB in a NutShell](https://www.beyondlogic.org/usbnutshell/usb1.shtml) that go into a lot of detail about how USB precisely works (check them out if you want more information), they are however not really approachable for somebody who has never worked with USB before and doesn't have a certain background in Hardware. You don't need to be an Embedded Systems Engineer to use USB the same way you don't need to be a Network Specialist to use Sockets and the Internet.
+This post aims to be a high level introduction to using USB for people who may not have worked with Hardware too much yet and just want to use the technology. There are amazing resources out there such as :link[USB in a NutShell]{id=https://www.beyondlogic.org/usbnutshell/usb1.shtml} that go into a lot of detail about how USB precisely works (check them out if you want more information), they are however not really approachable for somebody who has never worked with USB before and doesn't have a certain background in Hardware. You don't need to be an Embedded Systems Engineer to use USB the same way you don't need to be a Network Specialist to use Sockets and the Internet.
 
 # The USB Device
 
@@ -247,7 +247,7 @@ struct DeviceDescriptor {
 };
 ```
 
-Throwing the data into [ImHex](https://imhex.werwolv.net) and giving its Pattern Language this structure definition yields the following result:
+Throwing the data into :link[ImHex]{id=https://imhex.werwolv.net} and giving its Pattern Language this structure definition yields the following result:
 
 <Image src={device_descriptor_imhex} alt="USB Device Descriptor, decoded using ImHex" />
 
