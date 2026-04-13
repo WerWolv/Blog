@@ -1,4 +1,94 @@
 ---
-title: About
+title: About me
 ---
 
+import SectionDivider from '~/components/base/SectionDivider'
+import Steps from '@/Steps'
+
+export class Helpers {
+    static age = new Date(Date.now() - new Date('1998-11-04')).getUTCFullYear() - 1970
+
+    static #getTimeZoneOffset(date, timeZone) {
+        let iso = date.toLocaleString('en-CA', { timeZone, hour12: false }).replace(', ', 'T');
+        iso += '.' + date.getMilliseconds().toString().padStart(3, '0');
+        const lie = new Date(iso + 'Z');
+        return -(lie - date) / 60 / 1000;
+    }
+
+    static convertTime(time24h, fromTimezone) {
+        const [hours, minutes] = time24h.split(':').map(Number);
+        
+        const now = new Date();
+        const referenceDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    
+        const fromOffset = Helpers.#getTimeZoneOffset(referenceDate, fromTimezone);
+        const toOffset = Helpers.#getTimeZoneOffset(referenceDate, Intl.DateTimeFormat().resolvedOptions().timeZone);
+        const offsetDiff = toOffset - fromOffset;
+
+        let localMinutes = hours * 60 + minutes + offsetDiff;
+        localMinutes = (localMinutes + 24 * 60) % (24 * 60);
+
+        const localHours = Math.floor(localMinutes / 60);
+        const localMinutesRemainder = localMinutes % 60;
+
+        return `${localHours.toString().padStart(2, '0')}:${localMinutesRemainder.toString().padStart(2, '0')}`;
+    }
+}
+
+Hi! I'm Nik
+
+I'm a {Helpers.age} year old Embedded Software Engineer from Switzerland. I love working with hardware and low level software and firmware.
+
+I am fascinated by how computers and modern technology in general works on a fundamental level and enjoy learning, writing and teaching about it.
+That includes things like emulators, low level firmware, operating systems, FPGAs, Microcontrollers
+
+Most of the things I've done over the years can be found on :link[My GitHub page]{#@WerWolv}) or on this website here.
+
+
+<SectionDivider />
+
+## My Career
+
+<Steps>
+    <div>
+        **2024 - Present**<br/>
+        **Embedded Software Engineer** in Bern
+        - Member of the Kernel Team in Research & Development
+        - Maintenance and development of Bootloader, Linux Kernel, Drivers and Hardware Abstractions for custom embedded hardware
+        - Bring up of new hardware platforms
+        - Reverse Engineering of custom Hardware IP Blocks and Protocols
+        - Development of custom File System Layers
+    </div>
+    <div>
+        **2023 - 2024**<br/>
+        **Mandatory Swiss Civil Service** as an **IT Specialist** in Bern
+        - Support and maintenance of the IT infrastructure of a large private school
+        - Development of custom Software for the school's needs
+        - Administration and maintainance of Windows and Linux Servers and network infrastructure
+    </div>
+    <div>
+        **2021 - 2023**<br/>
+        **Embedded Software Engineer** and **Research Assistant** at the **Bern University of Applied Sciences**
+        - Research and development of Animal Tracking Devices for the Ornithological Institute
+        - Development and maintenance of a heterogeneous Microcontroller and FPGA based hardware platform for research and teaching purposes
+        - Part-time teaching of Embedded Systems lectures and labs
+    </div>
+    <div>
+        **2018 - 2021**<br/>
+        Bachelor's degree in **Electrical Engineering and Information Technology** at the **Bern University of Applied Sciences**
+        - In-depth courses in Embedded Systems, SoC and ASIC Design, Embedded Linux & Android, RTOS Development and Computer Vision
+        - Bachelor's thesis on the design and development of a [custom ARM-based hardware platform](https://yggdrasil.werwolv.net) running modern Linux (Grade A, 96%)
+    </div>
+    <div>
+        **2014 - 2018**<br/>
+        Apprenticeship as **Electronics Technician (Elektroniker EFZ)** in Bern
+    </div>
+</Steps>
+
+<SectionDivider />
+
+## Contact
+
+If you like to contact me, the easiest way is through :link[Discord @werwolv]{id="https://discord.com/users/181738643008782346"} or per [E-Mail `hey@werwolv.net`](mailto:hey@werwolv.net).
+
+I am usually around from **{Helpers.convertTime("08:00", "Europe/Zurich")}** to **{Helpers.convertTime("23:00", "Europe/Zurich")}** your time. **{Helpers.convertTime("00:00", "Europe/Zurich") != "01:00" ? "(08\:00 - 23\:00 CET)" : ""}**

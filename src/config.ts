@@ -33,6 +33,10 @@ export const HEADER_LINKS: Link[] = [
     name: 'Projects',
     url: '/projects',
   },
+  {
+    name: 'About',
+    url: '/about',
+  },
 ]
 
 export const FOOTER_LINKS: Link[] = [
@@ -52,6 +56,10 @@ export const FOOTER_LINKS: Link[] = [
     name: 'Tags',
     url: '/tags',
   },
+  {
+    name: 'About',
+    url: '/about',
+  },
 ]
 // get icon https://icon-sets.iconify.design/
 export const SOCIAL_LINKS: SocialLink[] = [
@@ -64,7 +72,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
   },
   {
     name: 'discord',
-    url: 'https://discordapp.com/users/181738643008782346',
+    url: 'https://discord.com/users/181738643008782346',
     icon: 'icon-[ri--discord-fill]',
     hoverColor: '#5865F2',
   },

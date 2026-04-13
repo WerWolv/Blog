@@ -2,12 +2,12 @@
 import Layout from '~/layouts/Layout.astro'
 import PageTitle from '~/components/base/PageTitle.astro'
 import Prose from '~/components/posts/base/Prose.astro'
-import Content from '~/content/about.mdx'
+import { Content, frontmatter } from '~/content/about.mdx'
 ---
 
-<Layout title="About" description="About me">
+<Layout title={frontmatter.title} description={frontmatter.subtitle || ''}>
   <div class="relative z-1 py-8 pb-10 px-6 sm:px-8">
-    <PageTitle title="About" introduce="" />
+    <PageTitle title={frontmatter.title} introduce={frontmatter.subtitle || ''} />
     <div class="mt-8">
       <Prose>
         <Content />
