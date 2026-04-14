@@ -170,7 +170,12 @@ export default function TechnicalTerm({
   }, [isOpen])
 
   return (
-    <span ref={rootRef} className={className} style={{ display: 'inline-block', position: 'relative', maxWidth: '100%' }}>
+    <span
+      ref={rootRef}
+      title="Click to learn more about this term"
+      className={className}
+      style={{ display: 'inline-block', position: 'relative', maxWidth: '100%' }}
+    >
       <span
         ref={triggerRef}
         role="button"
@@ -194,9 +199,9 @@ export default function TechnicalTerm({
           focusable="false"
           style={{
             position: 'absolute',
-            left: 0,
-            bottom: -1,
-            width: '100%',
+            left: '-10%',
+            bottom: -3,
+            width: '120%',
             height: 14,
             overflow: 'visible',
             pointerEvents: 'none',

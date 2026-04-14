@@ -1,0 +1,48 @@
+---
+title: 'Linux Bringup: Getting the Kernel running in the Browser'
+description: |
+  Getting a Linux environment running in a new environment, be it on a new PCB or in the browser.
+cover: assets/cover.png
+author: WerWolv
+pubDate: 2026-04-07
+tags: ['Linux', 'C++', 'Emulation', 'WebAssembly']
+license: 'CC-BY-NC-SA-4.0'
+recommend: true
+---
+
+import LinuxEmulator from './components/Linux'
+import TechnicalTerm from '@/TechnicalTerm'
+import LocalDocumentLink from '@/LocalDocumentLink'
+
+import riscv_spec from './assets/riscv-spec.pdf'
+
+
+# Introduction
+
+Many embedded systems these days run Linux as their operating system. Generally because it's a great foundation to run anything you like on top of and because many great developers and manufacturers already took care of writing drivers for all kinds of hardware components.
+
+Even though this makes building the finished project much easier, if you're dealing with custom hardware, you will most likely still have to bring up the Linux kernel on your own initially. This post is about just that: Setting up the bare minimul to get Linux running on a new platform. In this case, the new platform is not a new PCB but a minimal, emulated RISC-V CPU.
+
+## The requirements
+
+Even though Linux is a very complex piece of software, it doesn't actually have that many requirements to run. The only thing it really needs in terms of hardware is:
+- A CPU with an <TechnicalTerm client:load term="MMU">**Memory Management Unit**<br />A piece of hardware on the SoC that handles translating virtual addresses to physical addresses, allowing for isolation between multiple different userspace processes and the Kernel</TechnicalTerm>
+- Enough RAM to, at least, load the Kernel, a <TechnicalTerm client:load term="Device Tree">Basically a config file for the SoC and the hardware the Kernel will be running on.</TechnicalTerm> and an <TechnicalTerm client:load term="initramfs">**Initial RAM filesystem**<br/>A base filesystem that contains the necessary directory structure and binaries to boot the system</TechnicalTerm>
+- A periodically lapsing system clock timer
+- An interrupt controller to handle interrupts from the timer
+
+
+
+## To bake an Apple Pie from scratch...
+
+...we must first invent the universe.
+
+I wrote many emulators over the years, from one for a :link[Simple Intel 8051]{#WerWolv/8051Emulator} 8-bit microcontroller to a :link[.NET bytecode interpreter]{#WerWolv/ILInterpreter} and even a partial one for a :link[aarch64 CPU]{#WerWolv/Archway}. 
+
+The way I always start is by looking at the <TechnicalTerm client:load term="ISA Manual">**Instruction Set Architecture Manual**<br />A long PDF document that describes all the instructions the CPU can perform</TechnicalTerm>
+. For the RISC-V architecture, it's <LocalDocumentLink document={riscv_spec}>this document here</LocalDocumentLink>
+
+
+<LinuxEmulator client:load/>
+
+fgdfgdfgdf

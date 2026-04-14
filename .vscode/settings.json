@@ -15,5 +15,6 @@
       "other": "on"
     },
     "editor.snippetSuggestions": "top"
-  }
+  },
+  "mdx-preview.preview.enableScripts": true
 }
