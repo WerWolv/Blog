@@ -8,6 +8,7 @@ import expressiveCode from 'astro-expressive-code'
 import { remarkPlugins, rehypePlugins } from './plugins'
 import { SITE } from './src/config'
 import fs from 'fs'
+import mermaid from 'astro-mermaid'
 
 export default defineConfig({
   site: SITE.website,
@@ -38,5 +39,9 @@ export default defineConfig({
     react(),
     sitemap(),
     robotsTxt(),
+    mermaid({
+      theme: 'dark',
+      autoTheme: true,
+    }),
   ],
 })

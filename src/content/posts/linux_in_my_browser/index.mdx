@@ -35,11 +35,25 @@ Even though Linux is a very complex piece of software, it doesn't actually have 
 
 # To bake an Apple Pie from scratch...
 
-...we must first invent the universe.
+...we must first invent the universe. In this case, that's the system to run Linux on in the end. 
 
 I wrote many emulators over the years, from one for a :link[Simple Intel 8051]{#WerWolv/8051Emulator} 8-bit microcontroller to a :link[.NET bytecode interpreter]{#WerWolv/ILInterpreter} and even a partial one for a :link[aarch64 CPU]{#WerWolv/Archway}. 
 
-The way I always start is by looking at the <TechnicalTerm client:load term="ISA Manual">**Instruction Set Architecture Manual**<br />A long PDF document that describes all the instructions the CPU can perform</TechnicalTerm>. For the RISC-V architecture, it's <LocalDocumentLink document={riscv_spec}>this document here</LocalDocumentLink>
+The way I always start is by looking at the <TechnicalTerm client:load term="ISA Manual">**Instruction Set Architecture Manual**<br />A long PDF document that describes all the instructions the CPU can perform, what kind of registers there are and much more.</TechnicalTerm>. For the RISC-V architecture, it's <LocalDocumentLink document={riscv_spec}>this document here</LocalDocumentLink>.
+
+Instruction emulators, no matter for what machine, end up usually looking quite similar. The steps are always:
+```mermaid
+---
+config:
+  look: neo
+---
+flowchart LR
+  A[Process Hardware<br/>Side-Effects] --> B
+  B[Read Instruction Bytes] --> C
+  C[Decode Instruction] --> D[Execute Instruction]
+```
+
+
 
 
 <LinuxEmulator client:load/>

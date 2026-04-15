@@ -14,7 +14,6 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeCallouts from 'rehype-callouts'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeKatex from 'rehype-katex'
-import rehypeMermaid from 'rehype-mermaid'
 
 import type { RemarkPlugin, RehypePlugin } from '@astrojs/markdown-remark'
 import { type PropertiesFromTextDirective } from 'remark-directive-sugar'
@@ -89,5 +88,4 @@ export const rehypePlugins = [
     },
   ],
   rehypeKatex,
-  rehypeMermaid,
 ] as RehypePlugin[]

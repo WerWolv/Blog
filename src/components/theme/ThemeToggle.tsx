@@ -54,6 +54,7 @@ const ThemeToggle = () => {
 
     const isDark = newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
     root.classList.toggle('dark', isDark)
+    document.documentElement.dataset['theme'] = isDark ? 'dark' : 'light'
 
     const metaThemeColor = document.querySelector('meta[name="theme-color"]')
     if (metaThemeColor) {
