@@ -109,11 +109,6 @@ const Terminal = forwardRef<TerminalRef, TerminalProps>(function Terminal(
       })
       termRef.current = term
 
-      const focusTerminal = () => {
-        term?.focus()
-        term?.element?.focus()
-      }
-
       term.on('data', (data = '') => {
         onInput?.(data)
 
@@ -136,6 +131,9 @@ const Terminal = forwardRef<TerminalRef, TerminalProps>(function Terminal(
       term.open(container)
 
       if (term.element) {
+        // Prevent auto-scroll on focus
+        term.element.focus = () => {}
+
         term.element.style.float = 'none'
         term.element.style.width = '100%'
         term.element.style.maxWidth = '100%'
@@ -155,19 +153,6 @@ const Terminal = forwardRef<TerminalRef, TerminalProps>(function Terminal(
 
       container.style.cursor = 'text'
 
-      const handlePointerDown = () => {
-        focusTerminal()
-      }
-
-      container.addEventListener('pointerdown', handlePointerDown)
-      detachFocusHandlers = () => {
-        container.removeEventListener('pointerdown', handlePointerDown)
-      }
-
-      focusTerminal()
-      timeoutIds.push(window.setTimeout(focusTerminal, 50))
-      timeoutIds.push(window.setTimeout(focusTerminal, 150))
-
       if (initialText) {
         term.write(initialText)
       }
@@ -179,7 +164,6 @@ const Terminal = forwardRef<TerminalRef, TerminalProps>(function Terminal(
 
     return () => {
       disposed = true
-      detachFocusHandlers?.()
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
       inputListenersRef.current.clear()
       termRef.current = null

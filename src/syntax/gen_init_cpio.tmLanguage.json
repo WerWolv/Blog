@@ -1,0 +1,174 @@
+{
+  "name": "gen_init_cpio",
+  "scopeName": "source.cpio-list",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#dir-entry"
+    },
+    {
+      "include": "#file-entry"
+    },
+    {
+      "include": "#nod-entry"
+    },
+    {
+      "include": "#slink-entry"
+    },
+    {
+      "include": "#pipe-entry"
+    },
+    {
+      "include": "#sock-entry"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.number-sign.cpio-list",
+      "match": "#.*$"
+    },
+    "dir-entry": {
+      "name": "meta.entry.dir.cpio-list",
+      "match": "^\\s*(dir)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.dir.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.gid.cpio-list"
+        }
+      }
+    },
+    "file-entry": {
+      "name": "meta.entry.file.cpio-list",
+      "match": "^\\s*(file)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.file.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "string.unquoted.source.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "6": {
+          "name": "constant.numeric.gid.cpio-list"
+        }
+      }
+    },
+    "nod-entry": {
+      "name": "meta.entry.nod.cpio-list",
+      "match": "^\\s*(nod)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+([bc])\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.nod.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.gid.cpio-list"
+        },
+        "6": {
+          "name": "constant.language.device-type.cpio-list"
+        },
+        "7": {
+          "name": "constant.numeric.major.cpio-list"
+        },
+        "8": {
+          "name": "constant.numeric.minor.cpio-list"
+        }
+      }
+    },
+    "slink-entry": {
+      "name": "meta.entry.slink.cpio-list",
+      "match": "^\\s*(slink)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.slink.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "string.unquoted.target.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "6": {
+          "name": "constant.numeric.gid.cpio-list"
+        }
+      }
+    },
+    "pipe-entry": {
+      "name": "meta.entry.pipe.cpio-list",
+      "match": "^\\s*(pipe)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.pipe.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.gid.cpio-list"
+        }
+      }
+    },
+    "sock-entry": {
+      "name": "meta.entry.sock.cpio-list",
+      "match": "^\\s*(sock)\\s+(\\S+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "captures": {
+        "1": {
+          "name": "keyword.control.sock.cpio-list"
+        },
+        "2": {
+          "name": "string.unquoted.path.cpio-list"
+        },
+        "3": {
+          "name": "constant.numeric.mode.cpio-list"
+        },
+        "4": {
+          "name": "constant.numeric.uid.cpio-list"
+        },
+        "5": {
+          "name": "constant.numeric.gid.cpio-list"
+        }
+      }
+    }
+  }
+}

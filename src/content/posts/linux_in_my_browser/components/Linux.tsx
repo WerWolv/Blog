@@ -82,7 +82,7 @@ export default function Linux({ id }: { id: string }) {
 
   return (
     <div className="relative">
-      <Terminal ref={terminalRef} id={id} rows={25} cols={72} onInputChar={onTerminalInput} />
+      <Terminal ref={terminalRef} id={id} rows={25} cols={90} onInputChar={onTerminalInput} />
       {!hasStarted && (
         <div className="absolute inset-0 grid place-items-center">
           <button

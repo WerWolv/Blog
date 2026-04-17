@@ -1,11 +1,11 @@
 ---
-title: 'Linux Bringup: Getting the Kernel running in the Browser'
+title: 'Linux? In my Web Browser?'
 description: |
-  Getting a Linux environment running in a new environment, be it on a new PCB or in the browser.
+  A guide to bringing up the Linux Kernel and a userspace application on a new hardware (or in this case, a self-made emulator) and running it inside a Web Browser
 cover: assets/cover.png
 author: WerWolv
-pubDate: 2026-04-07
-tags: ['Linux', 'C++', 'Emulation', 'WebAssembly']
+pubDate: 2026-04-17
+tags: ['Linux', 'C++', 'Embedded']
 license: 'CC-BY-NC-SA-4.0'
 recommend: true
 ---
@@ -13,49 +13,381 @@ recommend: true
 import LinuxEmulator from './components/Linux'
 import TechnicalTerm from '@/TechnicalTerm'
 import LocalDocumentLink from '@/LocalDocumentLink'
+import Steps from '@/Steps'
+import NotePanel from '@/NotePanel'
+import PencilUnderline from '@/PencilUnderline'
+
+import { Image } from 'astro:assets'
 
 import riscv_spec from './assets/riscv-spec.pdf'
-
+import wd8250_datasheet from './assets/WD8250_82C50_16C450.pdf'
 
 # Introduction
 
 Many embedded systems these days run Linux as their operating system. Generally because it's a great foundation to run anything you like on top of and because many great developers and manufacturers already took care of writing drivers for all kinds of hardware components.
 
-Even though this makes building the finished project much easier, if you're dealing with custom hardware, you will most likely still have to bring up the Linux kernel on your own initially. This post is about just that: Setting up the bare minimul to get Linux running on a new platform. In this case, the new platform is not a new PCB but a minimal, emulated RISC-V CPU.
+Even though this makes building the finished project much easier, if you're dealing with custom hardware, you will most likely still have to bring up the Linux kernel on your own initially. This post is about just that: Setting up the bare minimal to get Linux running on a new platform. In this case, the new platform is not a new PCB but a minimal, emulated RISC-V CPU.
 
-## The requirements
+# Getting Linux to run
 
 Even though Linux is a very complex piece of software, it doesn't actually have that many requirements to run. The only thing it really needs in terms of hardware is:
 - A CPU with an <TechnicalTerm client:load term="MMU">**Memory Management Unit**<br />A piece of hardware on the SoC that handles translating virtual addresses to physical addresses, allowing for isolation between multiple different userspace processes and the Kernel</TechnicalTerm>
-- Enough RAM to, at least, load the Kernel, a <TechnicalTerm client:load term="Device Tree">Basically a config file for the SoC and the hardware the Kernel will be running on.</TechnicalTerm> and an <TechnicalTerm client:load term="initramfs">**Initial RAM filesystem**<br/>A base filesystem that contains the necessary directory structure and binaries to boot the system</TechnicalTerm>
+- Enough RAM to, at least, load the Kernel, a Device Tree and an initramfs.
 - A periodically lapsing system clock timer
-- An interrupt controller to handle interrupts from the timer
 
+## Writing an Emulator
 
+These things are what I ended up implementing in about 2000 lines of C++ code. For the CPU I implemented the <LocalDocumentLink document={riscv_spec}>`RV32IMA`</LocalDocumentLink> instruction set which has all the things Linux needs to run. For the Hardware, I implemented a simple RAM peripheral, the <TechnicalTerm client:load term="SBI interface">**Supervisor Binary Interface**<br/>Basically a syscall-like interface that allows the Kernel to send request to Machine Mode (the CPU itself) to configure built-in functionality</TechnicalTerm> for timers and a UART peripheral based on the <LocalDocumentLink document={wd8250_datasheet}>`WD8250`</LocalDocumentLink> chip which is well supported and is really simple to implement. 
 
-# To bake an Apple Pie from scratch...
+Documenting the entire process of writing the emulator is a bit out of scope for this post but the full implementation can be found here: :link[WerWolv/riscv-emulator]{#WerWolv/riscv-emulator}.
 
-...we must first invent the universe. In this case, that's the system to run Linux on in the end. 
+<NotePanel type="info" title="Real Hardware">
+On a real system, none of this would be necessary of course since the hardware would already be there. Instead of mapping the peripherals into the CPU's address space, you would instead read the datasheet of your SoC to figure out where the peripherals are mapped and then go from there to the next step. Also instead of simply being able to load the Kernel, Device Tree and initramfs into the RAM, you'd generally use a bootloader such as u-boot to load everything from some non-volatile storage medium such as a NOR Flash or an eMMC.
+</NotePanel>
 
-I wrote many emulators over the years, from one for a :link[Simple Intel 8051]{#WerWolv/8051Emulator} 8-bit microcontroller to a :link[.NET bytecode interpreter]{#WerWolv/ILInterpreter} and even a partial one for a :link[aarch64 CPU]{#WerWolv/Archway}. 
+Using this emulator, the final hardware definition looks like this:
+```cpp
+struct Hardware {
+  Hardware() {
+    // Map peripherals into the address space
+    cpu.address_space().map(0x0000'0000, &ram);
+    cpu.address_space().map(0xF400'0000, &uart8250);
 
-The way I always start is by looking at the <TechnicalTerm client:load term="ISA Manual">**Instruction Set Architecture Manual**<br />A long PDF document that describes all the instructions the CPU can perform, what kind of registers there are and much more.</TechnicalTerm>. For the RISC-V architecture, it's <LocalDocumentLink document={riscv_spec}>this document here</LocalDocumentLink>.
+    // Hook up a RISC-V compatible MMU as the address translator
+    cpu.address_space().add_address_translator(&riscv_mmu);
 
-Instruction emulators, no matter for what machine, end up usually looking quite similar. The steps are always:
-```mermaid
----
-config:
-  look: neo
----
-flowchart LR
-  A[Process Hardware<br/>Side-Effects] --> B
-  B[Read Instruction Bytes] --> C
-  C[Decode Instruction] --> D[Execute Instruction]
+    // Configure the UART peripheral to print output to the terminal
+    uart8250.output_callback([](std::uint8_t c) {
+      putchar(c);
+      fflush(stdout);
+    });
+
+    // Load the Linux Kernel to the start of the RAM
+    ram.write(0x00, LinuxKernel);
+
+    // Load the Device Tree to the end of the RAM
+    constexpr static auto DeviceTreeBlobLoadAddress = 512_MiB - 1_MiB;
+    ram.write(DeviceTreeBlobLoadAddress, DeviceTreeBlob);
+    // Put the device tree address into register a1 to emulate the way
+    // the bootloader would do it on a real system
+    emulator.cores()[0].a1() = DeviceTreeBlobLoadAddress;
+
+    // Load the Device Tree in front of the device tree
+    // but at a fixed address we can use later
+    constexpr static auto InitRamFsLoadAddress = 0x1F700000;
+    ram.write(InitRamFsLoadAddress, InitRamFs);
+
+    // Start up cpu
+    cpu.power_up();
+  }
+
+  auto step() -> void {
+    cpu.step();
+  }
+
+private:
+  riscv::Cpu<1> cpu;
+  dev::riscv::MMU<std::uint32_t> riscv_mmu;
+
+  dev::Ram ram(512_MiB);
+  dev::UART8250 uart8250;
+};
 ```
 
+This, of course, currently does absolutely nothing since there's no code for it to execute. To get Linux running, we need to first configure and compile the Linux Kernel for our platform and then populate those `LinuxKernel`, `DeviceTreeBlob` and `InitRamFs` arrays with the correct data.
+
+## Compiling a Toolchain
+
+To compile anything to run on the target, the first thing we need is a toolchain. Compiling it by hand is generally a bit of a pain since you need to get the correct version of various different tools and libraries and then configure and compile them <PencilUnderline color="gray">in the correct order</PencilUnderline> (sometimes even multiple times with different configurations!). Luckily for us though, the :link[crosstool-ng Project]{#crosstool-ng/crosstool-ng} exists and handles all of that for us. With it we can simply configure the toolchain we need and then let it do all the work.
+
+Since we're planing on building an application that later on runs on 32-bit RISC-V Linux, we need a toolchain that targets `riscv32-unknown-linux-gnu`. This will give us a GCC compiler that can compile C code for our target platform as well as glibc as the C standard library implementation to interface with the Kernel.
+
+```command withOutput frame="terminal" title="ct-ng" {"Generate the Makefiles":1-5} {"Compile the ct-ng binary":7-11} {"Start with the Start with the riscv32-unknown-elf configuration":13-18} {"since there's no pre-configured riscv32-linux-gnu one":14} {"Enter the config menu to modify the configuration":20-21}
+.
+$ ./bootstrap
+INFO  :: *** Generating package version descriptions
+...
+INFO  :: *** Done!
 
 
+$ make
+gmake[1]: Entering directory 'crosstool-ng'
+...
+GEN      ct-ng
+
+
+
+$ ./ct-ng riscv32-unknown-elf
+                                                    
+...
+Now configured for "riscv32-unknown-elf"
+
+
+$ ./ct-ng menuconfig
+```
+
+This will open a visual configuration menu where we can change various options for the toolchain.
+<Image src={import('./assets/ct-ng-menuconfig.png')} alt="The crosstool-ng configuration menu" />
+
+In here, the main things that needs to be changed here are:
+- Enable `Target options -> Use the MMU`
+- Set `Operating System -> Target OS` to `Linux`
+- Set `C library -> C library` to `glibc`
+- Enable `C compiler -> C++`
+
+Save the configuration and then run `./ct-ng build` to start the compilation process. This can very well take up to an hour or more depending on your machine, on mine it took about 11 minutes. After it's done, you should have a fully working `riscv32-unknown-linux-gnu` toolchain installed in `~/x-tools/riscv32-unknown-linux-gnu` that you can use to compile the Linux Kernel and any other software for your target platform.
+
+## Compiling the Linux Kernel
+
+Now that we have a toolchain, we can move on to compiling the Linux Kernel. After cloning the :link[torvalds/linux]{#torvalds/linux} repository, the first thing we need to do is to create a configuration for our platform. Since our platform is quite minimal and doesn't have any special hardware, we can just use the default RISC-V configuration as a base and then modify it to fit our needs. To do that, we can use `ARCH=riscv make menuconfig` to once again open a visual configuration menu.
+
+The main thing we need to change here is to get the Kernel to be built for 32 bit RISC-V instead of 64 bit. For that the following options need to be changed:
+- `Platform type -> Allow configurations that result in non-portable kernels` option needs to be enabled 
+  - Now the `Base ISA` option below can be set to `RV32I` 
+- All the `extension support` options need to be disabled as they're not implemented in the emulator.
+- `Boot options -> UEFI runtime support` needs to be disabled
+  - This is necessary only so the `Emit compressed instructions when building Linux` option can be disabledsince our emulator doesn't support the compressed instruction set.
+  - Under `Target options`, the `Generate code for the specific ABI` option needs to be set to `ilp32` and `Architecture Level` to `rv32ima` to prevent the compiler from using compressed instructions when building glibc and our init program later on.
+- Under `Kernel Features`, I had to enable the `SBI v0.1 support` for our Timer and `Build a relocatable kernel` since that allows us to load the Kernel at any address in memory which is quite nice for our use case.
+- Finally we can disable `Virtualization`, `Enable loadable module support`, `Networking support` and `Cryptographic API` since we don't need any of that and it just bloats the Kernel and increases boot time.
+- If you like, many of the Device Drivers can also be disabled since we don't have any of that hardware. I left everything standard there though since it's quite a few options to go through
+
+Everything else can be left as it is. After saving the configuration, we can compile the Kernel using the following command:
+```command frame="terminal" title="make"
+$ make -j    \
+  ARCH=riscv \
+  CROSS_COMPILE=/path/to/riscv32-unknown-linux-gnu-
+```
+If the make process asks questions if you want to enable or disable any other options, you can simply answer `n` to all of them.
+
+After the compilation is done, you should have a `arch/riscv/boot/Image` file that contains the compiled Kernel. This is the final file that can be executed.
+
+## Compiling a `init` program
+
+Using the same compiler we can also compile a simple `init` program that will be executed by the Kernel as soon as it has booted and reached userspace. In a real world embedded system, this would generally be something like <TechnicalTerm client:load term="busybox's">**Busybox** is a very small implementation of the basic GNU utilities that most Linux systems use. It's highly configurable but is generally used to provide tools like `sh`, `ls`, `cd` or many others.<br/>You can find out more about it here: :link[busybox.net]{id="https://busybox.net/"}</TechnicalTerm> `init` binary but it can really be any ELF executable. I simply wrote a small C program that prints some text to the console.
+
+```c title="init.c"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main() {
+  // Open /dev/kmsg to write logs directly to the Kernel Log
+  int kmsg = open("/dev/kmsg", O_WRONLY);
+  if (kmsg == -1) {
+    return EXIT_FAILURE;
+  }
+  
+  // Print some message
+  dprintf(kmsg, "Hello World from \033[32mLinux Userspace\033[0m!\n");
+  
+  // Loop forever to prevent the init process from exiting
+  while (true) {
+    sleep(1);
+  }
+  
+  // Close the file handle
+  close(kmsg);
+
+  return EXIT_SUCCESS;
+}
+```
+
+To make creating the initramfs a bit easier, we can compile the `init` program as a statically linked binary. This way we don't have to worry about any shared library dependencies and can just put the binary itself into the initramfs without needing to include any additional files.
+
+```command frame="terminal" title="riscv32-unknown-linux-gnu-gcc"
+$ riscv32-unknown-linux-gnu-gcc -static init.c -o init
+```
+
+## Creating an initramfs
+
+An initramfs or Initial RAM File System is usually just a `cpio` archive that contains all files and directories that should be available to the system after it boots. It is mounted by the Kernel to `/` and usually contains things like `/bin`, `/dev` and `/proc` but it can really contain anything you want.
+
+You can create a simple initramfs yourself by just creating a directory with the structure you want and then using the `find` and `cpio` commands to create the archive. However, building a reproducible initramfs this way can be difficult due to permissions, timestamps and other metadata that `cpio` includes in the archive. Instead, we can use a tool that was built automatically when we compiled the Kernel: `gen_init_cpio`. This tool takes in a textual description of the initramfs structure and content and then generates a `cpio` archive from it. The description file looks something like this:
+```gen_init_cpio title="initramfs.txt" {"Our init program we built before":1-4} {"Character and Block device nodes that the init program needs to run":6-15}
+.
+# /bin
+dir /bin 755 0 0
+file /bin/init init 755 0 0
+
+
+# /dev
+dir /dev 755 0 0
+nod /dev/kmsg 644 0 0 c 1 11
+nod /dev/initrd 644 0 0 b 1 250
+nod /dev/console 600 0 0 c 5 1
+nod /dev/null 666 0 0 c 1 3
+nod /dev/ram 644 0 0 b 1 0
+nod /dev/root 644 0 0 b 4 0
+nod /dev/ttyS0 660 0 0 c 4 64
+
+# /proc
+dir /proc 755 0 0
+```
+
+This file can be then finally compiled into a `cpio` archive using the `gen_init_cpio` tool like this:
+```command frame="terminal" title="gen_init_cpio"
+$ gen_init_cpio initramfs.txt -i initramfs.cpio
+```
+
+## Writing a Device Tree
+
+A device tree is a data structure that describes the hardware of the system to the Linux Kernel. It is used by the Kernel to know which drivers to load and how to configure them.
+
+Let's start with the bare minimum and build up from there. 
+```dts title="riscv-emulator.dts" {"Top level node for the system":3-4} {"The name of our platform":7-8} {"Configurations that apply to all CPUs":10-11} {"The timer in the emulator is configured to run at 65MHz":14-15} {"We have a single RISC-V CPU Core":17-18} {"The standard RISC-V interrupt controller that routes all interrupts":25-32} {"The memory the Kernel can use, 512MiB in our case":36-40}
+/dts-v1/;
+
+
+/ {
+  #address-cells = <0x01>;
+  #size-cells = <0x01>;
+
+  model = "WerWolv's Emulator";
+
+
+  cpus {
+    #address-cells = <0x01>;
+    #size-cells = <0x00>;
+
+    timebase-frequency = <65000000>;
+
+
+    cpu@0 {
+      device_type = "cpu";
+      compatible = "riscv";
+      reg = <0x00>;
+      riscv,isa = "rv32ima";
+      mmu-type = "riscv,sv32";
+
+
+      interrupt_controller: interrupt-controller {
+        #interrupt-cells = <0x01>;
+        #address-cells = <0x00>;
+        compatible = "riscv,cpu-intc";
+
+        interrupt-controller;
+      };
+    };
+  };
+
+
+  memory@0 {
+    device_type = "memory";
+    reg = <0x00 (512 * 1024 * 1024)>;
+  };
+}
+```
+
+This configuration is enough to describe the CPU and its timer to the Kernel. However, what's still missing is all the peripherals. These don't go under the `cpus` node but instead under the `soc` node
+
+```dts title="riscv-emulator.dts" {"Node that describes all the SoC-internal peripherals.":4} {"accessible via MMIO starting at address 0xF000'0000":5-6} {"The UART serial interface":12} {"connected to the address space offset 0x4000000 from the soc region":13-14} {"Can be accessed with ns8250 driver":16-17}
+/ {
+  // ...
+
+
+
+  soc@F0000000 {
+    #address-cells = <0x01>;
+    #size-cells = <0x01>;
+    compatible = "simple-bus";
+    ranges = <0x00 0xF0000000 0x10000000>;
+
+
+
+    serial@4000000 {
+
+
+      compatible = "ns8250", "ns16550";
+      reg = <0x4000000 0x100000>;
+      interrupt-parent = <&interrupt_controller>;
+      interrupts = <0x01>;
+      no-loopback-test;
+      clock-frequency = <5000000>;
+    };
+  };
+};
+```
+
+The final thing that's needed is configuration for the Kernel itself:
+```dts title="riscv-emulator.dts" {"Defines aliases to reference peripherals with an easier to read name":4-7} {"Kernel configuration":9-15}
+/ {
+  // ...
+
+
+  aliases {
+    serial0 = "/soc@F0000000/serial@4000000";
+  };
+
+
+  chosen {
+    bootargs = "earlycon console=/dev/ttyS0 rdinit=/bin/init root=/dev/initrd";
+    stdout-path = "serial0";
+    linux,initrd-start = <0x1F700000>;
+    linux,initrd-end = <0x1FEFFFFF>;
+  };
+};
+```
+
+The important bit here are the values in the `chosen` node.
+- The `bootargs` property defines the <TechnicalTerm client:load term="kernel command line">The same way you can pass arguments to a program, you can also pass arguments to the kernel itself. Usually it's used to pass any configuration properties from the Bootloader to the Kernel.<br/><br/>Run `cat /proc/cmdline` on your machine to see what arguments have been set by e.g grub</TechnicalTerm>. Here we tell the Kernel that we want to use the `earlycon` feature to get log output as quickly as possible, it will do that by sending all logs to the `serial0` device which is the alias we defined for our UART. We also tell the Kernel to execute our `/bin/init` program from the initramfs as the init process as soon as it has booted and reached userspace.
+- `linux,initrd-start` and `linux,initrd-end` define the location of the initramfs in memory. That's where we copied the initramfs we built previously to in the emulator.
+
+Now that we have the full Device Tree ready, we can compile it to a Device Tree Blob (`.dtb` file) using the `dtc` compiler. This is the final file that can be loaded by the Kernel.
+```bash title="dtc"
+$ dtc -I dts -O dtb -o riscv-emulator.dtb riscv-emulator.dts
+```
+
+# Putting it all together
+
+The 3 files we built now can be bundled into the emulator binary and then we can finally run the emulator and see Linux booting!
+
+```cpp
+constexpr std::uint8_t LinuxKernel[] = {
+    #embed "Image"
+};
+
+constexpr std::uint8_t DeviceTreeBlob[] = {
+    #embed "device_tree.dtb"
+};
+
+constexpr std::uint8_t InitRamFs[] = {
+    #embed "initramfs.cpio"
+};
+```
+
+```command frame="terminal"
+$ ./command
+
+[    0.000000] Booting Linux on hartid 0
+[    0.000000] Linux version 7.0.0-00166-g0f0013213293 (werwolv@fedora) ...
+[    0.000000] Machine model: WerWolv's Emulator
+...
+[   54.748992] Run /bin/init as init process
+[   54.814251] Hello World from Linux Userspace!
+```
+
+## Running it in the Browser
+
+Now that we have a self-contained executable that we can run to get the Linux Kernel to boot, there's nothing stopping us from also getting it to run in a Browser.
+For that, we can cross-compile the binary to WebAssembly and call into it from JavaScript. 
+
+<NotePanel type="alert" title="Performance">
+It might take up to a minute or so for the Kernel to reach userspace and execute the `init` program since this is not exactly a greatly optimized emulator in a greatly optimized environment
+</NotePanel>
+
+Click on the `Startup Machine` button below to boot up the emulator.
 
 <LinuxEmulator client:load/>
 
-fgdfgdfgdf
+
+# Wrapping up
+
+We now have a working Linux system running on our fantasy machine! While a few things here might feel a bit contrived, the general process is exactly the same for a real piece of hardware. Though instead of just choosing where things is mapped into memory, you'd instead consult the datasheet of your SoC. 
+
+Also things like the Kernel or the initramfs of course can't just exist in the memory magically but need to be put there instead by a Bootloader. On embedded systems this is usually something like :link[u-boot]{#u-boot/u-boot} or a proprietary thing provided by the chip manufacturer. There, you might need to further bundle up the Kernel, Device Tree and initramfs in some custom file format that the Bootloader can understand then. Check out the :link[Android Bootloader Manual]{id="https://source.android.com/docs/core/architecture/bootloader"} if you'd like to read about a real-world example of this.
+
+As always, the code that was used to get all of this running can be found on my GitHub Page:
+::github{repo="WerWolv/riscv-emulator"}

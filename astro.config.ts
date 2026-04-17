@@ -10,6 +10,10 @@ import { SITE } from './src/config'
 import fs from 'fs'
 import mermaid from 'astro-mermaid'
 
+function syntaxHighlighting(name: string): any {
+  return JSON.parse(fs.readFileSync(`./src/syntax/${name}.tmLanguage.json`, 'utf-8'))
+}
+
 export default defineConfig({
   site: SITE.website,
   base: SITE.base,
@@ -32,7 +36,7 @@ export default defineConfig({
   integrations: [
     expressiveCode({
       shiki: {
-        langs: [JSON.parse(fs.readFileSync('./src/syntax/pl.tmLanguage.json', 'utf-8'))],
+        langs: [syntaxHighlighting('pl'), syntaxHighlighting('dts'), syntaxHighlighting('gen_init_cpio'), syntaxHighlighting('command')],
       },
     }),
     mdx(),

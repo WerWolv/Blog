@@ -1,0 +1,27 @@
+{
+  "name": "command",
+  "scopeName": "source.shell-commands",
+  "patterns": [
+    {
+      "name": "meta.command.shell",
+      "begin": "^(\\$)\\s*",
+      "end": "(?<!\\\\)\\n",
+      "beginCaptures": {
+        "1": {
+          "name": "punctuation.definition.prompt.shell"
+        }
+      },
+      "contentName": "string.unquoted.command.shell",
+      "patterns": [
+        {
+          "name": "constant.character.escape.line-continuation.shell",
+          "match": "\\\\\\n"
+        }
+      ]
+    },
+    {
+      "name": "text.output.shell",
+      "match": "^(?!\\$).*$"
+    }
+  ]
+}

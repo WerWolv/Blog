@@ -108,6 +108,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
  */
 import altiumIcon from '/src/assets/altium-designer-icon.png'
 import imhexIcon from '/src/assets/imhex-icon.svg'
+import freecadIcon from '/src/assets/freecad-icon.png'
 export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
   SKILLS_ENABLED: true,
   SKILLS_DATA: [
@@ -184,6 +185,11 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
           icon: altiumIcon,
           url: 'https://www.altium.com/',
         },
+        {
+          name: 'FreeCAD',
+          icon: freecadIcon,
+          url: 'https://www.freecad.org/'
+        }
       ],
     },
     {
