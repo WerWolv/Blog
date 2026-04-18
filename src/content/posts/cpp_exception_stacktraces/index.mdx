@@ -1,0 +1,224 @@
+---
+title: Adding Stack Traces to C++ Exceptions
+description: |
+    Simple way to add stack traces to any C++ exception, including standard library ones, on GCC and Clang.
+cover: assets/cover.png
+author: WerWolv
+pubDate: 2026-04-18
+tags: ['C++']
+license: 'CC-BY-NC-SA-4.0'
+---
+
+import NotePanel from '@/NotePanel';
+
+# Introduction
+
+Compared to languages like Python or Java, C++ does not provide built-in support for stack traces in exceptions. This can make debugging somewhat difficult when all you end up having is a crash log stating `what(): bad optional access`. With some linker ticks and a bit of code, it is possible though to add cleaner stack traces to C++ exceptions, including standard library ones.
+
+<NotePanel type="alert" title="Platform Support">
+    This post focuses specifically on GCC and Clang using the Itanium C++ ABI. It will work on Linux and macOS out of the box and also on Windows when using MinGW with `libstdc++`. 
+    
+    For MSVC, a similar approach can be taken by hooking different functions that are used for exception handling in the MSVC runtime, but the details will be different and are not covered in this post.
+</NotePanel>
+
+# Naïve Approach
+
+The simplest way to get stack traces working for exceptions is to just create a custom exception type that captures the stack trace in the constructor and then we can print that stack trace in the `what()` method.
+
+```cpp showLineNumbers title="main.cpp"
+class ExceptionWithStackTrace : public std::exception {
+public:
+  ExceptionWithStackTrace(std::string what) {
+    m_what = std::format(
+      "what(): {}\n{}", 
+      what,
+      // Capture the stack trace
+      // skipping the current frame which is the constructor itself
+      std::stacktrace::current(1)
+    );
+  }
+
+  auto what() const noexcept -> const char* override {
+    return m_what.c_str();
+  }
+
+private:
+  std::string m_what;
+};
+
+auto some_function() -> void {
+  throw ExceptionWithStackTrace("Test");
+}
+
+auto main() -> int {
+  try {
+    some_function();
+  } catch (const std::exception &e) {
+    std::println("{}", e.what());
+  }
+}
+```
+
+This works great if all you need is stack traces for code you wrote yourself
+
+```command frame="terminal" title="custom_exceptions"
+$ ./custom_exceptions
+
+what(): Test
+   0#  someFunction() at main.cpp:20 [0x6520e5502718]
+   1#  main at main.cpp:25 [0x6520e5502793]
+   2#  <unknown> [0x785ae3c29d8f]
+   3#  __libc_start_main [0x785ae3c29e3f]
+   4#  _start [0x6520e5502604]
+```
+
+For any exception that is of a different type though, including standard library exceptions, we won't get a stack trace just like before.
+
+
+# A Better Approach
+
+To support stack traces for all exceptions, we need to somehow inject this code into the existing exceptions. However, there are quite a few of them and if libraries add their own, it would need to be added there as well. Luckily, the Itanium C++ ABI provides a simple common entry point for all exceptions that can be used.
+
+## How Exceptions Work in the Itanium ABI
+
+Exceptions in the Itanium ABI are implemented using a set of functions that are automatically inserted by the compiler when you throw or catch an exception.
+
+```asm
+main:
+    ; ...
+    ; try {
+        ; printf("Throwing\n");
+        call    puts@PLT
+        ; ...
+        ; auto exception = std::runtime_error("My exception");
+        call    __cxa_allocate_exception@PLT
+        call    std::runtime_error::runtime_error(char const*)@PLT
+        ; ...
+        ; throw exception;
+        call    __cxa_throw@PLT
+        ; ...
+        jmp     .catch_statement
+        ; ...
+        call    __cxa_free_exception@PLT
+    ; }
+.catch_statement:
+    ; ...
+    ; catch (const std::exception& e) {
+        call    __cxa_begin_catch@PLT
+        ; ...
+        ; printf("Caught exception\n");
+        call    puts@PLT
+        call    __cxa_end_catch@PLT
+    ; }
+    ; ...
+    ret
+```
+
+As you can see, the compiler generates calls to `__cxa_allocate_exception` and `__cxa_throw` at the call site of the `throw` statement and calls `__cxa_begin_catch` and `__cxa_end_catch` at the start and end of the catch block respectively. `__cxa_throw` is the function that actually starts the whole unwinding process so it is the perfect place to inject our stack trace code into. By hooking this function, we can capture the stack trace at the point where the exception is thrown and then we can store that stack trace in a thread-local variable that can be accessed later in the catch block.
+
+## Hooking `__cxa_throw`
+
+To hook `__cxa_throw`, we can make use of the Linker to redirect all calls made to `__cxa_throw` to our own function. This can be done by using the `-Wl,--wrap=__cxa_throw` flag when linking the application. 
+
+The linker will then replace all calls to `__cxa_throw` with calls to `__wrap___cxa_throw` and it will rename the original `__cxa_throw` function to `__real___cxa_throw`. 
+
+<NotePanel type="hint" title="Function names">
+    Note the triple-underscore here, the linker appends `__wrap_` and `__real_` to the function name and `__cxa_throw` already starts with two underscores...
+</NotePanel>
+<br/>
+We can now implement our own `__wrap___cxa_throw` function that captures the stack trace and then calls the original `__cxa_throw` function.
+
+```cpp title="stacktrace.cpp"
+#include <array>
+#include <stacktrace>
+#include <typeinfo>
+
+// Storage to store up to 5 nested stack traces for exceptions
+//   should be enough for most cases but can be increased if needed
+thread_local std::array<std::stacktrace, 5> s_stacktraces;
+
+// Forward declaration for the original __cxa_throw function
+//   that will be called from our wrapper
+extern "C" auto __real___cxa_throw(
+  void *thrown_object, 
+  std::type_info *tinfo, 
+  void (*dest)(void *)
+) -> void;
+
+// Wrapper function for __cxa_throw that will be called
+//   instead of the original one
+extern "C" auto __wrap___cxa_throw(
+  void *thrown_object, 
+  std::type_info *tinfo, 
+  void (*dest)(void *)
+) -> void {
+  // Called when an exception is thrown, at the call site of the `throw`
+
+  // std::uncaught_exceptions() returns the number of currently
+  //   active exceptions that have been thrown but not yet caught
+  auto exception_count = std::uncaught_exceptions();
+
+  // If there's still some space on the exception stack,
+  //   capture a new stacktrace and add it to the stack
+  if (exception_count < ssize_t(s_stacktraces.size())) {
+    // Add the current stack trace to the end of the
+    //   stack trace storage array skipping the current
+    //   frame which is the __wrap___cxa_throw function itself
+    s_stacktraces[exception_count] = std::stacktrace::current(1);
+  }
+
+  // Forward to original __cxa_throw()
+  __real___cxa_throw(thrown_object, tinfo, dest);
+}
+
+// Simple helper function to print the stack trace
+//   of the exception that's currently being caught
+auto print_stacktrace() -> void {
+  auto exception_count = std::uncaught_exceptions();
+  if (exception_count < 0) {
+    std::println("No active exception");
+    return;
+  } else if (exception_count >= s_stacktraces.size()) {
+    std::println("Too many active exceptions");
+    return;
+  }
+
+  std::print("Stacktrace:\n{}", s_stacktraces[exception_count]);
+}
+```
+
+Now code like this here will automatically have stack traces for all exceptions, including standard library ones, without needing any further modifications to existing code. The only thing that is needed is to add the `-Wl,--wrap=__cxa_throw` flag when linking the final executable and all shared libraries that need this functionality.
+
+```cpp showLineNumbers title="main.cpp"
+#include <optional>
+
+auto main() -> int {
+  try {
+    // A non-existent int
+    std::optional<int> nothing;
+
+    // This will throw a std::bad_optional_access exception
+    nothing.value();
+  } catch (const std::exception &e) {
+    // Print the exception what() message
+    std::println("Caught exception: {}", e.what());
+
+    // Print the stack trace
+    print_stacktrace();
+  }
+}
+
+```
+
+```command frame="terminal" title="wrapped_exceptions"
+$ ./wrapped_exceptions
+
+Caught exception: bad optional access
+Stacktrace:
+   0#  std::__throw_bad_optional_access() at optional:126 [0x5e5c24b3cf94]
+   1#  std::optional<int>::value() & at optional:1279 [0x5e5c24b3ccb2]
+   2#  main at main.cpp:9 [0x5e5c24b3c8a4]
+   3#  <unknown> [0x7b3a63229d8f]
+   4#  __libc_start_main [0x7b3a63229e3f]
+   5#  _start [0x5e5c24b3c644]
+```
