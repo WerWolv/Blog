@@ -231,8 +231,12 @@ Stacktrace:
 
 ## Important Caveats
 
-There's a few downsides with this approach that I'd like to mention. The first one is obviously that this is highly implementation defined. It works out of the box on latest GCC and Clang at the time of writing, both using libstdc++ as their C++ standard library.
+There's a few downsides with this approach that I'd like to mention. 
+
+The first one is obviously that this is highly implementation defined. It works out of the box on latest GCC and Clang at the time of writing, both using libstdc++ as their C++ standard library.
 
 LLVM's libc++ also uses the same exception mechanism, however it does currently not support `<stacktrace>` so something like `libbactrace` or `boost::stacktrace()` would need to be used instead.
+
+If your application throws a lot of exceptions that are caught and handled silently, this may add quite a substantial overhead as now every throw has to generate a stack trace, no matter if it's being used or not. Definitely do some profiling if you're using this in production code.
 
 Finally, due to the linker magic needed here, this only works for binaries you're linking yourself. If you rely on external shared libraries that you do not compile yourself, the exceptions there will not generate any stack traces. This includes exceptions thrown from the pre-compiled C++ standard library too. `libstdc++` seems to be doing this in a few places to prevent including exception headers in various libraries, `libc++` doesn't do this as often. Exceptions from there may be intercepted as well by using dynamic linker magic like a `LD_PRELOAD` library that defines the `__cxa_throw` symbol. For statically linked code, this is not necessary though.
