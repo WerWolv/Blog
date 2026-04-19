@@ -26,6 +26,11 @@ Compared to languages like Python or Java, C++ does not provide built-in support
 The simplest way to get stack traces working for exceptions is to just create a custom exception type that captures the stack trace in the constructor and then we can print that stack trace in the `what()` method.
 
 ```cpp showLineNumbers title="main.cpp"
+#include <exception>
+#include <stdexcept>
+#include <stacktrace>
+#include <print>
+
 class ExceptionWithStackTrace : public std::exception {
 public:
   ExceptionWithStackTrace(std::string what) {
@@ -132,6 +137,7 @@ We can now implement our own `__wrap___cxa_throw` function that captures the sta
 #include <array>
 #include <stacktrace>
 #include <typeinfo>
+#include <exception>
 
 // Storage to store up to 5 nested stack traces for exceptions
 //   should be enough for most cases but can be increased if needed
@@ -222,3 +228,11 @@ Stacktrace:
    4#  __libc_start_main [0x7b3a63229e3f]
    5#  _start [0x5e5c24b3c644]
 ```
+
+## Important Caveats
+
+There's a few downsides with this approach that I'd like to mention. The first one is obviously that this is highly implementation defined. It works out of the box on latest GCC and Clang at the time of writing, both using libstdc++ as their C++ standard library.
+
+LLVM's libc++ also uses the same exception mechanism, however it does currently not support `<stacktrace>` so something like `libbactrace` or `boost::stacktrace()` would need to be used instead.
+
+Finally, due to the linker magic needed here, this only works for binaries you're linking yourself. If you rely on external shared libraries that you do not compile yourself, the exceptions there will not generate any stack traces. This includes exceptions thrown from the pre-compiled C++ standard library too. `libstdc++` seems to be doing this in a few places to prevent including exception headers in various libraries, `libc++` doesn't do this as often. Exceptions from there may be intercepted as well by using dynamic linker magic like a `LD_PRELOAD` library that defines the `__cxa_throw` symbol. For statically linked code, this is not necessary though.
