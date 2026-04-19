@@ -1,6 +1,8 @@
+type NotePanelType = 'info' | 'note' | 'hint' | 'alert' | 'idea' | 'boom' | 'time' | 'link'
+
 interface NotePanelProps {
   title: string
-  type: 'info|hint|alert'
+  type: NotePanelType
   children: React.ReactNode
   id?: string
 }
@@ -41,10 +43,62 @@ const Types: any = {
     },
     icon: 'icon-[lucide--badge-alert]',
   },
+  ['idea']: {
+    backgroundColor: {
+      dark: '#232215',
+      light: '#fffdf2',
+    },
+    borderColor: {
+      dark: '#ffd000',
+      light: '#ffea00',
+    },
+    icon: 'icon-[lucide--lightbulb]',
+    transform: 'rotate(0.15turn) scale(1.25) translate(0, 4px)',
+  },
+  ['boom']: {
+    backgroundColor: {
+      dark: '#2a1a1a',
+      light: '#ffe6e6',
+    },
+    borderColor: {
+      dark: '#ff0000',
+      light: '#ff0000',
+    },
+    icon: 'icon-[lucide--bomb]',
+    transform: 'translate(5px, 0)',
+  },
+  ['time']: {
+    backgroundColor: {
+      dark: '#1a202c',
+      light: '#f0f4ff',
+    },
+    borderColor: {
+      dark: '#3366ff',
+      light: '#3366ff',
+    },
+    icon: 'icon-[lucide--clock]',
+  },
+  ['link']: {
+    backgroundColor: {
+      dark: '#1a202c',
+      light: '#f0f4ff',
+    },
+    borderColor: {
+      dark: '#3366ff',
+      light: '#3366ff',
+    },
+    icon: 'icon-[lucide--circle-arrow-out-up-left]',
+  },
 }
 
 export default function NotePanel({ title, type, children, id }: NotePanelProps) {
+  if (type === 'note') type = 'info'
+
   let config = Types[type]
+  if (!config) {
+    throw new Error(`Invalid NotePanel type: ${type}`)
+  }
+
   const scopeId = `note-panel-${type}${id ? `-${id}` : ''}`
   return (
     <div id={scopeId} style={{ position: 'relative' }}>
@@ -75,7 +129,7 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
           overflow: 'visible',
           pointerEvents: 'none',
           fontSize: `${CircleRadius + 5}px`,
-          transform: `translate(${-CircleRadius / 2}px, -${CircleRadius / 2}px)`,
+          transform: `translate(${-CircleRadius / 2}px, -${CircleRadius / 2}px) ${config.transform || ''}`,
           color: 'var(--border-color)',
         }}
         className={config.icon}
