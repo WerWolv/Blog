@@ -10,6 +10,8 @@ tags: ['Embedded', 'MIPS', 'RG350']
 license: 'CC-BY-NC-SA-4.0'
 ---
 
+import Figure from '@/Figure';
+
 ## Introduction
 
 The GCW0 as well as the RG350 are small handheld retro emulation and homebrew devices running the OpenDingux operating system. Although the RG350 was released 6 years after the GCW0, they both use the exact same Ingenic JZ4770 SoC.
@@ -36,11 +38,11 @@ The Boot ROM proceeds by copying the first 0x2000 bytes on the SD card into the 
 
 The data found in the icache now is the MBR immediately followed by the first stage bootloader and the Program Counter now points to address `0x8000'0000`. This is the start of the MBR which looks as follows in memory.
 
-![MBR and FSBL](assets/mbr_layout.png)
+<Figure src={import("assets/mbr_layout.png")} alt="MBR and FSBL"/>
 
 The MBR starts with the so called bootstrap code. A 440 bytes section containing code to setup the environment and jump into the actual first stage bootloader. On the GCW0 and the RG350, this is one instruction: `80 00 00 10` which is the MIPS instruction `B PC+#0x204` which jumps past the MBR (0x200 bytes) and the `MSPL` magic (4 bytes). Congratulations, we're now in our bootloader!
 
-![MBR and FSBL](assets/MBR_and_FSBL.png)
+<Figure src={import("assets/MBR_and_FSBL.png")} alt="MBR and FSBL"/>
 In red, the branch instruction is shown, in blue the `MSPL` magic in little endian.
 
 ## Bootloader startup code

@@ -7,8 +7,8 @@ interface Props {
 }
 
 export default function Divider({
-  icon = 'lucide--sparkles',
-  colorClass = 'text-indigo-300 dark:text-indigo-700',
+  icon = 'lucide--file-text',
+  colorClass = 'text-indigo-300 dark:text-indigo-500',
   lineColorClass = 'text-neutral-200 dark:text-neutral-800',
 }: Props) {
   return (

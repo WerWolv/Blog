@@ -10,15 +10,20 @@ license: 'CC-BY-NC-SA-4.0'
 ---
 
 import Steps from '@/Steps'
+import PdfDocument from '~/components/custom/PdfDocument';
+import Figure from '@/Figure';
 
 # Overview
 
-The `STM32MP157C-DK2` is one of the latest dev boards by ST Microelectronics. It features a STM32MP1 SoC with two ARM A7 cores and one M4 co-processor core. The intended way of using this SoC according to STM is to run their custom, pre-built Linux distribution, toolchain, SDK and proprietary flash tools. Their [Wiki](https://www.st.com/content/st_com/en/wiki/wiki-portal.html) does a great job at not telling you a lot of important details because STM's linux distro "takes care of that".
+The `STM32MP157C-DK2` is one of the latest dev boards by ST Microelectronics. It features a STM32MP1 SoC with two ARM A7 cores and one M4 co-processor core. The intended way of using this SoC according to STM is to run their custom, pre-built Linux distribution, toolchain, SDK and proprietary flash tools. Their :link[Wiki]{id="https://www.st.com/content/st_com/en/wiki/wiki-portal.html"} does a great job at not telling you a lot of important details because STM's linux distro "takes care of that".
 This post however deals with all the dirty details about how the entire boot process works and how to bring the DK2 board into a state where a custom kernel can be loaded.
 
 # Power on
 
-When the board gets plugged in, the first thing happening is the STPMIC1 power management IC initializing it's output voltages to the default settings. According to its [datasheet](https://www.st.com/resource/en/datasheet/stpmic1.pdf) and the [board schematics](https://www.st.com/content/ccc/resource/technical/layouts_and_diagrams/schematic_pack/group0/36/8e/ea/7a/ca/ca/4b/e4/mb1272-dk2-c01_schematic/files/MB1272-DK2-C01_Schematic.pdf/jcr:content/translations/en.MB1272-DK2-C01_Schematic.pdf), this means the core gets powered with 1.2V, the DDR RAM with 1.1V and the rest of the SoC peripherals with 3.3V.
+import stpmic1_datasheet from './assets/stpmic1.pdf';
+import board_schematics from './assets/p574376-en.MB1272-DK2-C01_Schematic.pdf';
+
+When the board gets plugged in, the first thing happening is the STPMIC1 power management IC initializing it's output voltages to the default settings. According to its <PdfDocument document={stpmic1_datasheet}>Datasheet</PdfDocument> and the <PdfDocument document={board_schematics}>Board Schematics</PdfDocument>, this means the core gets powered with 1.2V, the DDR RAM with 1.1V and the rest of the SoC peripherals with 3.3V.
 
 Once the voltage has stabilized, the Boot ROM starts running and determines where to boot from by reading either the `BOOT0` and `BOOT1` pin or a value burnt into the OTP eFuses. Possible boot sources are NAND and NOR flash, eMMC, Serial and SD cards. The DK2 uses the SD card by default as no other sources can be found on the board.
 
@@ -30,9 +35,9 @@ The Boot ROM now tries to boot from the SD card. The SD card must contain a GPT 
 
 ## FSBL
 
-For the Boot ROM to recognize and load the FSBL (or in fact any binary), a special format is used. It is described as the [STM32 header for binary files](https://wiki.st.com/stm32mpu/wiki/STM32_header_for_binary_files) and consists of a 256 bytes long header followed by the binary data to load.
+For the Boot ROM to recognize and load the FSBL (or in fact any binary), a special format is used. It is described as the :link[STM32 header for binary files]{id="https://wiki.st.com/stm32mpu/wiki/STM32_header_for_binary_files"} and consists of a 256 bytes long header followed by the binary data to load.
 
-![STM32 header](https://wiki.st.com/stm32mpu/nsfr_img_auth.php/4/4c/STM32_header.png)
+<Figure src={import('./assets/STM32_header.png')} alt="STM32 header" />
 
 The following code is a python script which generates a correct header for any given FSBL binary:
 
@@ -117,9 +122,9 @@ Hoping that one of the two LEDs used for debugging would light up
 </div>
 </Steps>
 
-This process usually took between 2 and 3 minutes and the only way to debug things was extracting two bits of information at the time using the two on-board LEDs. This time is luckily over thanks to the amazing [OpenOCD](https://github.com/ntfreak/openocd) project. OpenOCD is an open source embedded debugging software providing the ability to interface with many different debugging interfaces such as JTAG and ST-Link. Additionally it integrates a gdb-server which can be used control, program and debug the connected SoC though GDB. This ultimately allows for one click building, flashing and debugging right within VSCode:
+This process usually took between 2 and 3 minutes and the only way to debug things was extracting two bits of information at the time using the two on-board LEDs. This time is luckily over thanks to the amazing :link[OpenOCD]{id="https://github.com/ntfreak/openocd"} project. OpenOCD is an open source embedded debugging software providing the ability to interface with many different debugging interfaces such as JTAG and ST-Link. Additionally it integrates a gdb-server which can be used control, program and debug the connected SoC though GDB. This ultimately allows for one click building, flashing and debugging right within VSCode:
 
-![VSCode GDB debugging](assets/vscode_debugging.png)
+<Figure src={import('./assets/vscode_debugging.png')} alt="VSCode GDB debugging" />
 
 Getting OpenOCD to run properly is really easy thanks to a bunch of pre-made scripts.
 
@@ -177,9 +182,9 @@ All of this allows for instant loading of your changes without having to go thro
 
 The easiest way to indicate a sign of life is always to light up an LED. The STM32MP157C-DK2 conveniently has two user LEDs on board, a blue one and an orange one. Checking the board schematics shows, they are connected to GPIO Pin D11 and H7 respectively.
 
-![LEDs](assets/schematic_leds.png)
-![Orange LED](assets/schematic_led_y.png)
-![Blue LED](assets/schematic_led_b.png)
+<Figure src={import('./assets/schematic_leds.png')} alt="Schematic showing LED components" />
+<Figure src={import('./assets/schematic_led_y.png')} alt="SoC Pins of the Orange LED" />
+<Figure src={import('./assets/schematic_led_b.png')} alt="SoC Pins of the Blue LED" />
 
 To set up the GPIO pins now, the following steps need to be done.
 
@@ -215,16 +220,20 @@ This blog post and list will be updated as I go along and finish more of the boo
 The current progress can be found here:
 ::github{repo="WerWolv/STM32MP1OS"}
 
-Update 20.08.2021: One of the professors of the University I'm on, emailed me and a friend about projects next year and asked if we wanted to work on a project including the STM32MP1 to possibly use it in the future to teach new students about low-level C, Embedded Linux and Asynchronous multiprocessing. This not only means we don't have to worry about getting a good project next year, it also means I can continue working on the same board during my Bachelor thesis which is absolutely amazing :D
+## Update 20.08.2021
 
-Update 22.01.2021: The project we ended up doing using this board was a demo application showcasing a hardware accelerated GUI running on the A7 Cores under Linux controlling a real-time, bare metal firmware running on the M4 coprocessor. The coprocessor is running an RTOS which uses a PID controller to regulate the height of a ball inside a tube using a ToF sensor to measure the ball's height and a fan to blow the ball up.
+One of the professors of the University I'm on, emailed me and a friend about projects next year and asked if we wanted to work on a project including the STM32MP1 to possibly use it in the future to teach new students about low-level C, Embedded Linux and Asynchronous multiprocessing. This not only means we don't have to worry about getting a good project next year, it also means I can continue working on the same board during my Bachelor thesis which is absolutely amazing :D
+
+## Update 22.01.2021
+
+The project we ended up doing using this board was a demo application showcasing a hardware accelerated GUI running on the A7 Cores under Linux controlling a real-time, bare metal firmware running on the M4 coprocessor. The coprocessor is running an RTOS which uses a PID controller to regulate the height of a ball inside a tube using a ToF sensor to measure the ball's height and a fan to blow the ball up.
+
+
 Our professor just told us that we're getting an A for the work we've done using the STM32MP157C-DK2 and has high hopes that we're doing as well during the bachelor thesis. During the bachelor thesis we'll be developing a modular development board for students to replace the current (old and incredibly large and heavy) development boards for Embedded systems, Linux and Android classes as well as FPGA/SoC design in VHDL class. This is going to be amazing :)
 
-<br />
-<br />
-<hr />
-<br />
-<br />
+import Divider from '@/Divider';
+
+<Divider icon='lucide--file-text'/>
 
 # Reverse Engineering Notes
 

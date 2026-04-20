@@ -12,12 +12,11 @@ recommend: true
 
 import LinuxEmulator from './components/Linux'
 import TechnicalTerm from '@/TechnicalTerm'
-import LocalDocumentLink from '@/LocalDocumentLink'
+import PdfDocument from '@/PdfDocument'
 import Steps from '@/Steps'
 import NotePanel from '@/NotePanel'
 import PencilUnderline from '@/PencilUnderline'
-
-import { Image } from 'astro:assets'
+import Figure from '@/Figure'
 
 import riscv_spec from './assets/riscv-spec.pdf'
 import wd8250_datasheet from './assets/WD8250_82C50_16C450.pdf'
@@ -37,7 +36,7 @@ Even though Linux is a very complex piece of software, it doesn't actually have 
 
 ## Writing an Emulator
 
-These things are what I ended up implementing in about 2000 lines of C++ code. For the CPU I implemented the <LocalDocumentLink document={riscv_spec}>`RV32IMA`</LocalDocumentLink> instruction set which has all the things Linux needs to run. For the Hardware, I implemented a simple RAM peripheral, the <TechnicalTerm client:load term="SBI interface">**Supervisor Binary Interface**<br/>Basically a syscall-like interface that allows the Kernel to send request to Machine Mode (the CPU itself) to configure built-in functionality</TechnicalTerm> for timers and a UART peripheral based on the <LocalDocumentLink document={wd8250_datasheet}>`WD8250`</LocalDocumentLink> chip which is well supported and is really simple to implement. 
+These things are what I ended up implementing in about 2000 lines of C++ code. For the CPU I implemented the <PdfDocument document={riscv_spec}>`RV32IMA`</PdfDocument> instruction set which has all the things Linux needs to run. For the Hardware, I implemented a simple RAM peripheral, the <TechnicalTerm client:load term="SBI interface">**Supervisor Binary Interface**<br/>Basically a syscall-like interface that allows the Kernel to send request to Machine Mode (the CPU itself) to configure built-in functionality</TechnicalTerm> for timers and a UART peripheral based on the <PdfDocument document={wd8250_datasheet}>`WD8250`</PdfDocument> chip which is well supported and is really simple to implement. 
 
 Documenting the entire process of writing the emulator is a bit out of scope for this post but the full implementation can be found here: :link[WerWolv/riscv-emulator]{#WerWolv/riscv-emulator}.
 
@@ -127,7 +126,7 @@ $ ./ct-ng menuconfig
 ```
 
 This will open a visual configuration menu where we can change various options for the toolchain.
-<Image src={import('./assets/ct-ng-menuconfig.png')} alt="The crosstool-ng configuration menu" />
+<Figure src={import('./assets/ct-ng-menuconfig.png')} alt="The crosstool-ng configuration menu" />
 
 In here, the main things that needs to be changed here are:
 - Enable `Target options -> Use the MMU`
@@ -146,7 +145,7 @@ The main thing we need to change here is to get the Kernel to be built for 32 bi
   - Now the `Base ISA` option below can be set to `RV32I` 
 - All the `extension support` options need to be disabled as they're not implemented in the emulator.
 - `Boot options -> UEFI runtime support` needs to be disabled
-  - This is necessary only so the `Emit compressed instructions when building Linux` option can be disabledsince our emulator doesn't support the compressed instruction set.
+  - This is necessary only so the `Emit compressed instructions when building Linux` option can be disabled as our emulator doesn't support the compressed instruction set.
   - Under `Target options`, the `Generate code for the specific ABI` option needs to be set to `ilp32` and `Architecture Level` to `rv32ima` to prevent the compiler from using compressed instructions when building glibc and our init program later on.
 - Under `Kernel Features`, I had to enable the `SBI v0.1 support` for our Timer and `Build a relocatable kernel` since that allows us to load the Kernel at any address in memory which is quite nice for our use case.
 - Finally we can disable `Virtualization`, `Enable loadable module support`, `Networking support` and `Cryptographic API` since we don't need any of that and it just bloats the Kernel and increases boot time.

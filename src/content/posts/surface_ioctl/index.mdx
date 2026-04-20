@@ -9,6 +9,8 @@ tags: ['Windows', 'C#', 'Surface Book']
 license: 'CC-BY-NC-SA-4.0'
 ---
 
+import Figure from '@/Figure';
+
 ## Overview
 
 The Surface Book 2 is one of Microsoft's self made notebooks. What makes it different from other laptops is it's deep integration of the drawing pen into Windows and the ability to detach the entire screen from it's base by pressing a button on the keyboard or using their pre-installed `SurfaceDTX` tool.
@@ -42,7 +44,7 @@ To find out how the latch driver works, there are two possible approaches. Eithe
 
 I decided to go for the latter since the tool was trivial to find (by simply looking at the task manager) and even better, it was written in C# containing full symbol information. To analyze the .NET application, I used `JetBrain dotPeek`. Simply looking through the different namespaces in dotPeek quickly made me discover a promising class called `DriverLatch.cs`.
 
-![Namespaces](assets/dotPeek_namespaces.png)
+<Figure src={import('./assets/dotPeek_namespaces.png')} alt="The namespaces of the SurfaceDTX binary in dotPeek" />
 
 Conveniently, at the very start of the file, the latch interface GUID and all the different control codes were specified.
 
@@ -85,7 +87,7 @@ Again, very conveniently labeled :)
 
 In order to send data to the driver, a handle is required which is returned by the `NtCreateFile` syscall. The issue is though, how to get the path of it? This, I couldn't figure out either at first. Consulting Microsoft's documentation didn't really help a lot either. The way I came up with is sadly not super great but it did the trick. The path always contains the GUID found previously in the source code. And for the .NET tool to communicate with the driver it needs to have the full path in memory somewhere. So why not use Cheat Engine's string search tool to search for the GUID string in memory and look around a bit to find the rest of the string. Important to note is, since this is a .NET application, all strings are stored in UTF-16. After some fiddling around, this is what turned up:
 
-![Cheat Engine](assets/cheatEngine_devicePath.png)
+<Figure src={import('./assets/cheatEngine_devicePath.png')} alt="Cheat Engine" />
 
 Or in plain text: `\\?\ACPI#MSHW0133#2&daba3ff&1#{f49e75f6-f869-4346-9eb8-ded248275916}`
 

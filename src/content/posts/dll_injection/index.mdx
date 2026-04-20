@@ -13,15 +13,15 @@ license: 'CC-BY-NC-SA-4.0'
 
 import NotePanel from '@/NotePanel'
 import Steps from '@/Steps'
+import Figure from '@/Figure'
 
 ## Introduction
 
 I started this project mainly because I wanted a proper XP tracker I didn't have to pay extra for since the price felt really unjustifiable to me.
 
-This page explains how I used Visual C++ to write a DLL injector tool for [RuneScape's](http://runescape.com/)
-NXT Client together with a DLL that hooks into RuneScape's OpenGL draw calls to render a [Dear ImGui](https://github.com/ocornut/imgui) overlay on top of it.
+This page aims to explain how I used Visual C++ to write a DLL injector tool for :link[RuneScape]{id="http://runescape.com/"}'s new NXT Client as well as a DLL that hooks into RuneScape's OpenGL draw calls to render a full :link[Dear ImGui]{#ocornut/imgui} overlay on top of it.
 
-![RuneScape with ImGui Overlay](assets/cover.png)
+<Figure src={import("assets/cover.png")} alt="RuneScape with ImGui Overlay"/>
 
 ## DLL Injecting
 
@@ -202,11 +202,11 @@ The secret of drawing an overlay in any process is hooking the graphic library's
 In case of OpenGL this function is called `wglSwapBuffers`, in case of DirectX it's `d3dEndScene`.
 We simply let the Game draw all its content and when it calls the function to end the current frame, we draw our overlay on top before calling the actual end frame function.
 
-<NotePanel type="info">
+<NotePanel type="info" title="Graphics APIs">
   An easy way to find out what the Game you want to hook uses, is to load the Game executable into Ghidra and checking its imports in the
   Symbol Tree.
 </NotePanel>
-![Imports](assets/ghidra_imports.png)
+<Figure src={import("assets/ghidra_imports.png")} alt="Ghidra Imports"/>
 
 (RuneScape imports both `opengl32.dll` AND `d3d9.dll` here but according to the wiki, it only uses Direct3D if OpenGL is not working)
 
@@ -214,13 +214,9 @@ But how does hooking even work?
 
 A hook works by overwriting some instruction(s) in a function's code with a `jmp` instruction.
 
-##### Before patching
+<Figure src={import("assets/swapBuffers_pre.png")} alt="Pre Patching"/>
 
-![Pre Patching](assets/swapBuffers_pre.png)
-
-##### After patching
-
-![Post Patching](assets/swapBuffers_post.png)
+<Figure src={import("assets/swapBuffers_post.png")} alt="Post Patching"/>
 
 This instruction will redirect execution flow to trampoline routine which first executes the instruction(s) we overwrote with the jump. Then we have to save the current context. We don't know how our code modifies the registers but what we know is that after our code ran and execution gets back to the hooked function, they need to be in the same state as before our hook ran. Otherwise the original function might end up doing unpredictable things or just straight out crashes. This is usually done by pushing all registers onto the stack, executing the hook, popping all registers back into the right registers and then jumping back right after the injected `jmp` instruction in the original function.
 
@@ -334,13 +330,17 @@ HMODULE hOpengl32 = GetModuleHandle(L"opengl32.dll");
 
 if (hOpengl32 != nullptr) {
     // Get the address of wglSwapBuffers
-    DWORD64 wglSwapBuffersHookAddr = (DWORD64)GetProcAddress(hOpengl32,
-        "wglSwapBuffers");
+    DWORD64 wglSwapBuffersHookAddr = (DWORD64)GetProcAddress(
+        hOpengl32,
+        "wglSwapBuffers"
+    );
 
     // Insert a hook to our trampoline at the start of wglSwapBuffers,
     // returns the address to return to
     wglSwapBuffers_return = (glSwapBuffers_t) mem::hookFunction(
-        wglSwapBuffersHookAddr, (DWORD64)wglSwapBuffersTrampoline, 5
+        wglSwapBuffersHookAddr, 
+        (DWORD64)wglSwapBuffersTrampoline, 
+        5
     );
 }
 ```

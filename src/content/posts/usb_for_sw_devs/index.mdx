@@ -12,7 +12,7 @@ recommend: true
 
 import NotePanel from '@/NotePanel'
 import PencilUnderline from '@/PencilUnderline'
-import LocalDocumentLink from '@/LocalDocumentLink'
+import PdfDocument from '@/PdfDocument'
 
 import { Image } from 'astro:assets'
 import device_descriptor_imhex from './assets/device_descriptor_imhex.png';
@@ -42,7 +42,7 @@ Enumeration refers to the process of the host asking the device for information 
 
 ## Basic Information
 
-Even without a driver, plugging the phone into your computer will still make it get recognized as a USB device. That's because the <LocalDocumentLink document={usb_spec}>USB specification</LocalDocumentLink> defines a standard way for devices to identify themselves to the host, more on how that exactly works in a bit though.
+Even without a driver, plugging the phone into your computer will still make it get recognized as a USB device. That's because the <PdfDocument document={usb_spec}>USB specification</PdfDocument> defines a standard way for devices to identify themselves to the host, more on how that exactly works in a bit though.
 
 On Linux, we can use the handy `lsusb` tool to see what the device identified itself as:
 ```txt title="lsusb" frame="terminal" 
@@ -73,11 +73,11 @@ The `Class=Vendor Specific Class` part specifies that the device does not use an
 The `Driver=[none]` part simply tells us that the OS didn't load a driver for the device which is good for us since we want to write our own.
 
 <NotePanel title="Note for Windows" type="info">
-    If you're on Windows, you won't have `lsusb` but you can still find most of this information using the Device Manager or tools like [USB Device Tree Viewer](https://www.uwe-sieber.de/usbtreeview_e.html)
+    If you're on Windows, you won't have `lsusb` but you can still find most of this information using the Device Manager or tools like :link[USB Device Tree Viewer]{id="https://www.uwe-sieber.de/usbtreeview_e.html"}
 </NotePanel>
 
 
-We will also go after the `VID` and `PID` since they are the only real identifying information we have. The Device Class is not very useful for it here since it's just `Vendor Specific Class` which any manufacturer can use for any device. Instead of doing all of this in the Kernel though, we can write a Userspace application that does the same thing. This is much easier to write and debug (and is arguably the correct place for drivers to live anyway but that's a different topic). To do this, we can use the [libusb](https://libusb.info/) library which provides a simple API for communicating with USB devices from Userspace. It achieves this by providing a generic driver that can be loaded for any device and then provides a way for Userspace applications to claim the device and talk to it directly.
+We will also go after the `VID` and `PID` since they are the only real identifying information we have. The Device Class is not very useful for it here since it's just `Vendor Specific Class` which any manufacturer can use for any device. Instead of doing all of this in the Kernel though, we can write a Userspace application that does the same thing. This is much easier to write and debug (and is arguably the correct place for drivers to live anyway but that's a different topic). To do this, we can use the :link[libusb]{id="https://libusb.info/"} library which provides a simple API for communicating with USB devices from Userspace. It achieves this by providing a generic driver that can be loaded for any device and then provides a way for Userspace applications to claim the device and talk to it directly.
 
 
 # Enumerating the device with `libusb`
@@ -140,7 +140,7 @@ Congrats! You have a program now that can detect your device without ever having
 <NotePanel title="Note for Windows" type="info">
     On Linux, all of this will generally just work. If for any reason a driver anyway being loaded, you can forcefully detach it using `libusb_detach_kernel_driver()`.
 
-    On Windows, things may look different. If you're lucky, the device has a `Microsoft OS Descriptor` that tells Windows to load the `Winusb.sys` driver for your device. In that case, `libusb` can talk to it directly. However if no driver was loaded (the device shows up in the Device Manager with a little ⚠️ icon), you might need to use [Zadig](https://zadig.akeo.ie/) to force-replace the driver of the device with `Winusb.sys` or another supported driver. More information can be found here: [libusb Wiki](https://github.com/libusb/libusb/wiki/Windows)
+    On Windows, things may look different. If you're lucky, the device has a `Microsoft OS Descriptor` that tells Windows to load the `Winusb.sys` driver for your device. In that case, `libusb` can talk to it directly. However if no driver was loaded (the device shows up in the Device Manager with a little ⚠️ icon), you might need to use :link[Zadig]{id="https://zadig.akeo.ie/"} to force-replace the driver of the device with `Winusb.sys` or another supported driver. More information can be found here: :link[libusb Wiki]{id="https://github.com/libusb/libusb/wiki/Windows"}
 </NotePanel>
 
 <br/>
@@ -194,7 +194,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0000: 01 00 
 ```
 
-Those bytes came from the device itself! Decoding them <LocalDocumentLink document={usb_spec} fragment="%5B%7B%22num%22%3A957%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">using the specification</LocalDocumentLink> tells us that the first byte tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and the second byte means it does not support Remote Wakeup (meaning it cannot wake up the host). 
+Those bytes came from the device itself! Decoding them using the <PdfDocument document={usb_spec} fragment="%5B%7B%22num%22%3A957%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">USB Specification</PdfDocument> tells us that the first byte tells us whether or not the device is Self-Powered (1 means it is which makes sense, the device has a battery) and the second byte means it does not support Remote Wakeup (meaning it cannot wake up the host). 
 
 There are a few more standardized request types (and some devices even add their own for simple things!) but the main one we (and the OS too) are interested in is the `GET_DESCRIPTOR` request.
 
@@ -227,7 +227,7 @@ Addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 0010: 00 01 
 ```
 
-Now to decode this data, we need to look at the <LocalDocumentLink document={usb_spec} fragment="%5B%7B%22num%22%3A978%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">USB specification on Chapter 9.6.1 Device</LocalDocumentLink>. There we can find that the format looks as follows: 
+Now to decode this data, we need to look at the <PdfDocument document={usb_spec} fragment="%5B%7B%22num%22%3A978%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2Cnull%2Cnull%2Cnull%5D">USB specification on Chapter 9.6.1 Device</PdfDocument>. There we can find that the format looks as follows: 
 
 ```pl title="usb.hexpat"
 struct DeviceDescriptor {
@@ -384,7 +384,7 @@ That means two things:
 
 # Fastboot, finally
 
-Now that we have all this information about USB, let's look into the Fastboot protocol. The best documentation for this is both the [u-boot Source Code](https://github.com/u-boot/u-boot/tree/master/drivers/fastboot) and as its [Documentation](https://docs.u-boot.org/en/stable/android/fastboot-protocol.html#example-session). 
+Now that we have all this information about USB, let's look into the Fastboot protocol. The best documentation for this is both the :link[u-boot Source Code]{id="https://github.com/u-boot/u-boot/tree/master/drivers/fastboot"} and as its :link[Documentation]{id="https://docs.u-boot.org/en/stable/android/fastboot-protocol.html#example-session"}. 
 
 According to the documentation, the protocol really is incredibly simple. The Host sends a string command and the device responds with a 4 character status code followed by some data.
 
