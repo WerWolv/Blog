@@ -114,19 +114,19 @@ I love writing these <Icon iconPack="lucide" name="file" /> pages
 
 </MdxPreview>
 
-## `<LocalTime />`
+## `<LocalTime client:load />`
 
 This component displays a given time in the user's local timezone.
 
 ```mdx
 import LocalTime from '@/LocalTime'
 
-`12:00` my time is <LocalTime time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
+`12:00` my time is <LocalTime client:load time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
 ```
 
 import LocalTime from '@/LocalTime'
 
-`12:00` my time is <LocalTime time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
+`12:00` my time is <LocalTime client:load time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
 
 ## `<NotePanel />`
 
