@@ -1,0 +1,325 @@
+---
+title: Blog Component Zoo
+description: |
+  Collection of reusable components for my blog
+cover: assets/cover.png
+author: WerWolv
+pubDate: 2026-04-21
+tags: []
+license: 'CC-BY-NC-SA-4.0'
+hidden: true
+---
+
+import MdxPreview from './assets/MdxPreview'
+
+# Blog Component Zoo
+
+This is a collection of reusable components that I have created for my blog.
+
+## `<Age />`
+
+This component calculates the age based on the birth date and the current date.
+
+<MdxPreview>
+import Age from '@/Age'
+
+Hello, I am <Age birthDate="1998-11-04" /> years old.
+</MdxPreview>
+
+## `<ArchivedLink />`
+
+This component creates a link to an archived version of a webpage.
+
+<MdxPreview>
+import ArchivedLink from '@/ArchivedLink'
+
+My old blog <ArchivedLink link="https://werwolv.net" date="2020-01-01">from 2020</ArchivedLink> is archived on the Wayback Machine.
+</MdxPreview>
+
+## `<Divider />`
+
+This component creates a horizontal divider with an icon in the middle.
+
+<MdxPreview>
+import Divider from '@/Divider'
+
+<Divider icon="lucide--file" colorClass="text-orange-500" />
+</MdxPreview>
+
+## `<Figure />`
+W
+This component creates a figure with an image and a caption.
+
+<MdxPreview>
+import Figure from '@/Figure'
+
+<Figure 
+    src={import("./assets/figure.png")} 
+    alt="Example Figure" 
+    caption="This is an example figure."
+/>
+</MdxPreview>
+
+## `<FileTree client:load />`
+
+This component renders a file tree structure based on a given data structure.
+
+```mdx
+import FileTree from '@/FileTree'
+
+<FileTree client:load>
+- src
+  - components
+    - Button.tsx
+    - Card.tsx
+  - pages
+    - index.astro
+    - about.astro
+</FileTree>
+```
+
+import FileTree from '@/FileTree'
+
+<FileTree client:load>
+- src
+  - components
+    - Button.tsx
+    - Card.tsx
+  - pages
+    - index.astro
+    - about.astro
+</FileTree>
+
+## `<Horizontal />`
+
+This component creates a horizontal layout for its children, allowing for side-by-side content.
+
+<MdxPreview>
+import Horizontal from '@/Horizontal'
+
+<Horizontal>
+  <div class="bg-accent p-4 rounded">Left Content</div>
+  <div class="bg-accent p-4 rounded">Right Content</div>
+</Horizontal>
+</MdxPreview>
+
+## `<Icon />`
+
+This component renders an icon from a given icon set.
+
+<MdxPreview>
+import Icon from '@/Icon'
+
+I love writing these <Icon iconPack="lucide" name="file" /> pages
+
+</MdxPreview>
+
+## `<LocalTime />`
+
+This component displays a given time in the user's local timezone.
+
+```mdx
+import LocalTime from '@/LocalTime'
+
+`12:00` my time is <LocalTime time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
+```
+
+import LocalTime from '@/LocalTime'
+
+`12:00` my time is <LocalTime time24h="12:00" fromTimezone="Europe/Zurich" /> for you.
+
+## `<NotePanel />`
+
+This component creates a styled panel for notes or important information.
+
+<MdxPreview>
+import NotePanel from '@/NotePanel'
+
+<NotePanel type="info" title="Info">
+  This is an information.
+</NotePanel>
+<br/>
+<NotePanel type="note" title="Note">
+  This is a note.
+</NotePanel>
+<br/>
+<NotePanel type="hint" title="Hint">
+  This is a hint.
+</NotePanel>
+<br/>
+<NotePanel type="alert" title="Alert">
+  This is an alert.
+</NotePanel>
+<br/>
+<NotePanel type="idea" title="Idea">
+  This is an idea.
+</NotePanel>
+<br/>
+<NotePanel type="boom" title="Boom">
+  Something blew up.
+</NotePanel>
+<br/>
+<NotePanel type="time" title="Time">
+  This will take some time.
+</NotePanel>
+<br/>
+<NotePanel type="link" title="Link">
+  Take a look somewhere else.
+</NotePanel>
+</MdxPreview>
+
+## `<Oscilloscope client:load />`
+
+This component renders digital signal waveforms, useful for visualizing binary data or timing diagrams.
+
+```mdx
+import Oscilloscope from '@/Oscilloscope'
+
+<Oscilloscope client:load
+  signals={[
+    { name: 'CLK', color: 'blue' },
+    { name: 'DATA', color: 'green' },
+    { name: 'EN', color: 'red' },
+  ]}
+  channelData={[
+    [0, 0, 1, 0, 1, 0, 1, 0, 1, 0], // Clock signal
+    [0, 0, 0, 1, 0, 1, 0, 1, 1, 0], // Data signal
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0], // Enable signal
+  ]}
+/>
+```
+
+import Oscilloscope from '@/Oscilloscope'
+
+<Oscilloscope client:load
+  signals={[
+    { name: 'CLK', color: 'blue' },
+    { name: 'DATA', color: 'green' },
+    { name: 'EN', color: 'red' },
+  ]}
+  channelData={[
+    [0, 0, 1, 0, 1, 0, 1, 0, 1, 0], // Clock signal
+    [0, 0, 0, 1, 0, 1, 0, 1, 1, 0], // Data signal
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0], // Enable signal
+  ]}
+/>
+
+## `<PdfDocument />`
+
+This component embeds a link to a PDF document with an optional fragment
+
+<MdxPreview>
+import PdfDocument from '@/PdfDocument'
+import datasheet from './assets/datasheet.pdf'
+
+Datasheet for the <PdfDocument document={datasheet} fragment="%5B%7B%22num%22%3A103%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C124%2C693%2Cnull%5D">STM32F446</PdfDocument> microcontroller.
+</MdxPreview> 
+
+## `<PencilUnderline />`
+
+This component renders a hand-drawn pencil underline effect for emphasizing text.
+
+<MdxPreview>
+import PencilUnderline from '@/PencilUnderline'
+
+This is a <PencilUnderline color="orange">pencil underline</PencilUnderline> effect. Every single one will look different, just like if you <PencilUnderline color="lightblue">would draw it by hand</PencilUnderline>.
+</MdxPreview>
+
+## `<Quote />`
+
+This component renders a styled blockquote for highlighting quotes or important text.
+
+<MdxPreview>
+import Quote from '@/Quote'
+
+<Quote author="Albert Einstein" title="Some Dude">
+    Goats are like mushrooms. If you shoot a duck, I am scared of toasters.
+</Quote>
+</MdxPreview>
+
+## `<Spoiler />`
+
+This component hides its content behind a spoiler warning, which can be revealed by the user.
+
+<MdxPreview>
+import Spoiler from '@/Spoiler'
+
+In case you didn't know, <Spoiler>Snape kills Dumbledore</Spoiler>.
+</MdxPreview>
+
+## `<Steps />`
+
+This component renders a step-by-step guide or process flow.
+
+<MdxPreview>
+import Steps from '@/Steps'
+
+<Steps>
+<div>
+    ### Step 1: Do this
+    First, you need to do this thing. It's very important to get this right.
+</div>
+<div>
+    ### Step 2: Do that
+    Next, you should do that thing. Make sure to follow the instructions carefully.
+</div>
+<div>
+    ### Step 3: Finish up
+    Finally, finish up by doing this last thing. Congratulations, you've completed the process!
+</div>
+</Steps>
+</MdxPreview>
+
+## `<TechnicalTerm client:load />`
+
+This component highlights technical terms and can provide additional information when clicking on it.
+
+```mdx
+import TechnicalTerm from '@/TechnicalTerm'
+
+The <TechnicalTerm client:load term="CPU" description="Central Processing Unit, the brain of the computer" /> is responsible for executing instructions in a computer.
+```
+
+import TechnicalTerm from '@/TechnicalTerm'
+
+The <TechnicalTerm client:load term="CPU">**Central Processing Unit**, the brain of the computer</TechnicalTerm> is responsible for executing instructions in a computer.
+
+## `<Terminal client:load />`
+
+This component renders a terminal emulator. This component is mostly useful when embedded into another component. Then it can display dynamic terminal output.
+
+```mdx
+import Terminal from '@/Terminal'
+
+<Terminal client:load initialText={"Welcome to Linux!\r\n$ "}/>
+```
+
+import Terminal from '@/Terminal'
+
+<Terminal client:load initialText={"Welcome to Linux!\r\n$ "}/>
+
+## `<Video client:load />`
+
+This component embeds a video player for a given video source.
+
+```mdx
+import Video from '@/Video'
+import test_video from './assets/video.mp4'
+
+<Video client:load src={test_video} />
+```
+
+import Video from '@/Video'
+import test_video from './assets/video.mp4'
+
+<Video client:load src={test_video} />
+
+## `<YouTube />`
+
+This component embeds a YouTube video based on a given video ID.
+
+<MdxPreview>
+import YouTube from '@/YouTube'
+
+<YouTube id="dQw4w9WgXcQ" />
+</MdxPreview>

@@ -7,6 +7,7 @@ import remarkMath from 'remark-math'
 import remarkReadingTime from './remark-reading-time'
 import remarkLQIP from './remark-lqip.js'
 import remarkGithubCard from './remark-github-card'
+import remarkMdxPreview from './remark-mdx-preview'
 
 import rehypeSlug from 'rehype-slug'
 import rehypeUnwrapImages from 'rehype-unwrap-images'
@@ -56,6 +57,7 @@ export const remarkPlugins = [
   remarkReadingTime,
   remarkLQIP,
   remarkGithubCard,
+  remarkMdxPreview,
 ] as RemarkPlugin[]
 
 export const rehypePlugins = [

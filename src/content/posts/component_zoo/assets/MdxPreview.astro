@@ -1,0 +1,14 @@
+---
+import { Code } from 'astro-expressive-code/components'
+
+interface Props {
+  code: string
+}
+
+const { code } = Astro.props
+---
+
+<Code {code} lang="mdx" />
+<div class="mdx-preview">
+  <slot />
+</div>

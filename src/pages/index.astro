@@ -17,10 +17,20 @@ let showPosts: any[] = []
 const pinnedPosts = await getPinnedPosts()
 const hasPinnedPosts = pinnedPosts.length > 0
 if (hasPinnedPosts) {
-  showPosts = pinnedPosts.concat(await getNumPosts(Math.max(0, size - pinnedPosts.length)))
+  // Show pinned posts first, then fill the rest with non-pinned posts if needed
+  const remainingSize = size - pinnedPosts.length
+  if (remainingSize > 0) {
+    const nonPinnedPosts = await getNumPosts(size * 2) // Get more posts to ensure we can fill the remaining slots after filtering out pinned ones
+    const filteredNonPinnedPosts = nonPinnedPosts.filter((post) => !pinnedPosts.some((pinned) => pinned.data.title === post.data.title))
+    showPosts = [...pinnedPosts, ...filteredNonPinnedPosts.slice(0, remainingSize)]
+  } else {
+    showPosts = pinnedPosts.slice(0, size) // If there are more pinned posts than the size limit, just show the top ones
+  }
 } else {
   showPosts = await getNumPosts(size)
 }
+
+showPosts = showPosts.filter((post) => !post.data.hidden)
 ---
 
 <Layout title="WerWolv's Blog" description={SITE.description}>
