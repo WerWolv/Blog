@@ -383,38 +383,58 @@ export default function TechnicalTerm({
 
       {isMounted && isRendered
         ? createPortal(
-            <div
-              id={popupId}
-              ref={popupRef}
-              role="dialog"
-              aria-hidden={!isOpen}
-              style={{
-                position: 'fixed',
-                left: popupPosition.left,
-                top: popupPosition.top,
-                zIndex: 10,
-                width: popupPosition.width,
-                maxWidth: popupPosition.width,
-                maxHeight: popupPosition.maxHeight,
-                opacity: isVisible ? 1 : 0,
-                visibility: isPositioned ? 'visible' : 'hidden',
-                transform: isVisible
-                  ? 'translateY(0) scale(1)'
-                  : popupPosition.placement === 'top'
-                    ? 'translateY(6px) scale(0.98)'
-                    : 'translateY(-6px) scale(0.98)',
-                transformOrigin: popupPosition.placement === 'top' ? 'bottom left' : 'top left',
-                transition: 'opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-                pointerEvents: isOpen && isVisible ? 'auto' : 'none',
-              }}
-            >
+            <>
+              <style>{`
+                @keyframes tt-border-flow-${safeId} {
+                  0%   { background-position: 0% 50%; }
+                  50%  { background-position: 100% 50%; }
+                  100% { background-position: 0% 50%; }
+                }
+                .tt-border-wrap-${safeId} {
+                  background: linear-gradient(90deg, ${blueColor}, ${violetColor}, ${blueColor});
+                  background-size: 200% 200%;
+                  animation: tt-border-flow-${safeId} 3s ease infinite;
+                  border-radius: 0.5rem;
+                  padding: 1.5px;
+                }
+              `}</style>
               <div
-                className="markdown rounded-lg bg-background border-solid border-1 p-1 pl-3 pr-3 drop-shadow-2xl"
-                style={{ maxHeight: popupPosition.maxHeight, overflow: 'auto' }}
+                id={popupId}
+                ref={popupRef}
+                role="dialog"
+                aria-hidden={!isOpen}
+                style={{
+                  position: 'fixed',
+                  left: popupPosition.left,
+                  top: popupPosition.top,
+                  zIndex: 10,
+                  width: popupPosition.width,
+                  maxWidth: popupPosition.width,
+                  maxHeight: popupPosition.maxHeight,
+                  opacity: isVisible ? 1 : 0,
+                  visibility: isPositioned ? 'visible' : 'hidden',
+                  transform: isVisible
+                    ? 'translateY(0) scale(1)'
+                    : popupPosition.placement === 'top'
+                      ? 'translateY(6px) scale(0.98)'
+                      : 'translateY(-6px) scale(0.98)',
+                  transformOrigin: popupPosition.placement === 'top' ? 'bottom left' : 'top left',
+                  transition: 'opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+                  pointerEvents: isOpen && isVisible ? 'auto' : 'none',
+                  borderRadius: '0.5rem',
+                }}
+                className="drop-shadow-2xl"
               >
-                {children}
+                <div className={`tt-border-wrap-${safeId}`}>
+                  <div
+                    className="markdown rounded-lg bg-background p-1 pl-3 pr-3"
+                    style={{ maxHeight: popupPosition.maxHeight, overflow: 'auto' }}
+                  >
+                    {children}
+                  </div>
+                </div>
               </div>
-            </div>,
+            </>,
             document.body
           )
         : null}

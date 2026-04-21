@@ -88,7 +88,6 @@ const Terminal = forwardRef<TerminalRef, TerminalProps>(function Terminal(
   useEffect(() => {
     let disposed = false
     let term: TermJsTerminal | null = null
-    let detachFocusHandlers: (() => void) | null = null
     const timeoutIds: number[] = []
 
     const mount = async () => {

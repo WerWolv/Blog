@@ -1,8 +1,12 @@
 {
   "name": "litos",
+  "private": true,
   "type": "module",
   "version": "1.0.3",
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "astro dev",
     "build": "astro check && astro build",
@@ -14,6 +18,7 @@
     "postbuild": "pagefind --site dist"
   },
   "dependencies": {
+    "mdx-blog-components": "workspace:*",
     "@astrojs/react": "^5.0.3",
     "@floating-ui/react": "^0.27.12",
     "@nanostores/react": "^0.8.4",

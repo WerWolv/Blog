@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@astrojs/react'
 import mdx from '@astrojs/mdx'
 import sitemap from '@astrojs/sitemap'
+import { fileURLToPath } from 'node:url'
 import robotsTxt from 'astro-robots-txt'
 import expressiveCode from 'astro-expressive-code'
 import { remarkPlugins, rehypePlugins } from './plugins'
@@ -25,6 +26,10 @@ export default defineConfig({
     plugins: [tailwindcss()],
     assetsInclude: ['**/*.pdf'],
     resolve: {
+      alias: {
+        '@/': fileURLToPath(new URL('./packages/custom-components/src/', import.meta.url)),
+        'mdx-blog-components': fileURLToPath(new URL('./packages/custom-components/src', import.meta.url)),
+      },
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.astro', '.mdx'],
     },
   },

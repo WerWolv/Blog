@@ -1,6 +1,4 @@
-export default function Steps({ children, document, fragment = '' }: { children: React.ReactNode; document: string; fragment?: string }) {
-  const href = `${document}${fragment ? `#${fragment}` : ''}`
-
+export default function Steps({ children }: { children: React.ReactNode }) {
   const style = `
     @layer components {
         .steps-container > * {

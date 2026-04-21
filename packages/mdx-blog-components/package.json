@@ -1,0 +1,45 @@
+{
+  "name": "mdx-blog-components",
+  "version": "0.1.0",
+  "description": "Reusable components for MDX blog posts",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./Age": "./src/Age.tsx",
+    "./ArchivedLink": "./src/ArchivedLink.tsx",
+    "./Divider": "./src/Divider.tsx",
+    "./Figure": "./src/Figure.tsx",
+    "./FileTree": "./src/FileTree.tsx",
+    "./Horizontal": "./src/Horizontal.tsx",
+    "./Icon": "./src/Icon.tsx",
+    "./Image": "./src/Image.tsx",
+    "./LocalTime": "./src/LocalTime.tsx",
+    "./NotePanel": "./src/NotePanel.tsx",
+    "./Oscilloscope": "./src/Oscilloscope.tsx",
+    "./PdfDocument": "./src/PdfDocument.tsx",
+    "./PencilUnderline": "./src/PencilUnderline.tsx",
+    "./Quote": "./src/Quote.tsx",
+    "./Spoiler": "./src/Spoiler.tsx",
+    "./Steps": "./src/Steps.tsx",
+    "./TechnicalTerm": "./src/TechnicalTerm.tsx",
+    "./Terminal": "./src/Terminal.tsx",
+    "./Video": "./src/Video.tsx",
+    "./YouTube": "./src/YouTube.tsx"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.2",
+    "term.js": "^0.0.7"
+  }
+}

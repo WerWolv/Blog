@@ -1,13 +1,14 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules"],
+  "exclude": ["dist", "node_modules", "**/wasm/*.js"],
   "compilerOptions": {
     "strictNullChecks": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
-      "@/*": ["./src/components/custom/*"]
+      "@/*": ["packages/mdx-blog-components/src/*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react",
