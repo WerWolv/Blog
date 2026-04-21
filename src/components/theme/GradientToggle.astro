@@ -44,11 +44,20 @@ import { DEFAULT_GRADIENT_PRESET, GRADIENT_PRESETS } from '~/stores/gradient'
   }
 
   let current = getPresetById(localStorage.getItem('gradient-preset'))
-  applyPreset(current)
+
+  const applyGradient = () => {
+    applyPreset(current)
+    requestAnimationFrame(() => {
+      document.querySelector('.header-gradient-fill')?.classList.remove('no-transition')
+    })
+  }
+
+  applyGradient()
   syncVisibility()
 
-  requestAnimationFrame(() => {
-    document.querySelector('.header-gradient-fill')?.classList.remove('no-transition')
+  document.addEventListener('astro:after-swap', () => {
+    applyGradient()
+    syncVisibility()
   })
 
   button.addEventListener('click', () => {
