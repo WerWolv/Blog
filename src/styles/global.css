@@ -3,6 +3,30 @@
 @plugin "@tailwindcss/typography";
 @plugin "@iconify/tailwind4";
 
+/* ===== Header Gradient Animation ===== */
+@property --hg-from {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0);
+}
+
+@property --hg-to {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0);
+}
+
+.header-gradient-fill {
+  background-image: linear-gradient(to right, var(--hg-from), var(--hg-to));
+  transition:
+    --hg-from 600ms ease,
+    --hg-to 600ms ease;
+}
+
+.header-gradient-fill.no-transition {
+  transition: none;
+}
+
 /* ===== Dark Mode Configuration ===== */
 @custom-variant dark (&:where(.dark, .dark *));
 

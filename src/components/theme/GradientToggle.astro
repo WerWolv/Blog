@@ -1,0 +1,63 @@
+---
+import { DEFAULT_GRADIENT_PRESET, GRADIENT_PRESETS } from '~/stores/gradient'
+---
+
+<button
+  data-gradient-toggle
+  class="relative size-5 items-center justify-center cursor-pointer hidden"
+  aria-label="Change header gradient"
+  title="Change header gradient"
+>
+  <span class="icon-[tabler--palette] size-5 text-white/90 transition-transform duration-150 ease-in-out hover:scale-105 active:scale-90"
+  ></span>
+  <span
+    data-gradient-dot
+    class="absolute bottom-0 right-0 block rounded-full transition-all duration-200 ease-in-out"
+    style="width: 7px; height: 7px;"></span>
+</button>
+
+<script define:vars={{ GRADIENT_PRESETS, DEFAULT_GRADIENT_PRESET }}>
+  const root = document.documentElement
+  const button = document.querySelector('[data-gradient-toggle]')
+  const dot = document.querySelector('[data-gradient-dot]')
+
+  if (!(button instanceof HTMLButtonElement) || !(dot instanceof HTMLElement)) {
+    throw new Error('Gradient toggle elements are missing')
+  }
+
+  const getPresetById = (id) => GRADIENT_PRESETS.find((preset) => preset.id === id) ?? DEFAULT_GRADIENT_PRESET
+
+  const applyPreset = (preset) => {
+    root.style.setProperty('--hg-from', preset.from)
+    root.style.setProperty('--hg-to', preset.to)
+    dot.style.background = `linear-gradient(135deg, ${preset.from}, ${preset.to})`
+    dot.style.boxShadow = `0 0 4px 1px ${preset.from}`
+    dot.style.filter = 'saturate(3) brightness(1.4)'
+    button.setAttribute('title', `Gradient: ${preset.label}`)
+    button.setAttribute('aria-label', `Change header gradient (current: ${preset.label})`)
+  }
+
+  const syncVisibility = () => {
+    const isDark = root.classList.contains('dark')
+    button.classList.toggle('hidden', !isDark)
+    button.classList.toggle('inline-flex', isDark)
+  }
+
+  let current = getPresetById(localStorage.getItem('gradient-preset'))
+  applyPreset(current)
+  syncVisibility()
+
+  requestAnimationFrame(() => {
+    document.querySelector('.header-gradient-fill')?.classList.remove('no-transition')
+  })
+
+  button.addEventListener('click', () => {
+    const index = GRADIENT_PRESETS.findIndex((preset) => preset.id === current.id)
+    current = GRADIENT_PRESETS[(index + 1) % GRADIENT_PRESETS.length]
+    localStorage.setItem('gradient-preset', current.id)
+    applyPreset(current)
+  })
+
+  const observer = new MutationObserver(syncVisibility)
+  observer.observe(root, { attributes: true, attributeFilter: ['class', 'data-theme'] })
+</script>

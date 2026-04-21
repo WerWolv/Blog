@@ -2,6 +2,7 @@
 import { HEADER_LINKS } from '~/config'
 import ThemeToggle from '~/components/theme/ThemeToggle'
 import HeaderGradient from '~/components/theme/HeaderGradient.astro'
+import GradientToggle from '~/components/theme/GradientToggle.astro'
 import SectionDivider from '~/components/base/SectionDivider.astro'
 import HeaderLink from '~/components/base/HeaderLink.astro'
 import SearchSwitch from '~/components/base/SearchSwitch.astro'
@@ -45,6 +46,7 @@ import favicon from '../../public/logo.png'
       >
         <span class="icon-[material-symbols--rss-feed] size-5"></span>
       </a>
+      <GradientToggle />
       <ThemeToggle client:load />
     </div>
   </div>
