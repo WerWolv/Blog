@@ -188,8 +188,8 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'FreeCAD',
           icon: freecadIcon,
-          url: 'https://www.freecad.org/'
-        }
+          url: 'https://www.freecad.org/',
+        },
       ],
     },
     {

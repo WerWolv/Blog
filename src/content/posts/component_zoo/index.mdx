@@ -46,8 +46,26 @@ import Divider from '@/Divider'
 <Divider icon="lucide--file" colorClass="text-orange-500" />
 </MdxPreview>
 
+## `<ExtraInformation client:load />`
+
+This component adds a fold-out panel to add extra information for something without cluttering the main text.
+
+```mdx
+import ExtraInformation from '@/ExtraInformation'
+
+The <ExtraInformation client:load name="USB Device Descriptor">
+  The **USB Device Descriptor** is a data structure that provides information about a USB device, such as its vendor ID, product ID, and supported USB version. It is used by the host to identify and configure the device.
+</ExtraInformation> is a crucial part of the USB protocol.
+```
+
+import ExtraInformation from '@/ExtraInformation'
+
+The <ExtraInformation client:load name="USB Device Descriptor">
+  The **USB Device Descriptor** is a data structure that provides information about a USB device, such as its vendor ID, product ID, and supported USB version. It is used by the host to identify and configure the device.
+</ExtraInformation> is a crucial part of the USB protocol.
+
 ## `<Figure />`
-W
+
 This component creates a figure with an image and a caption.
 
 <MdxPreview>

@@ -1,5 +1,6 @@
 export { default as Age } from './Age'
 export { default as ArchivedLink } from './ArchivedLink'
+export { default as ExtraInformation } from './ExtraInformation'
 export { default as Divider } from './Divider'
 export { default as Figure } from './Figure'
 export { default as FileTree } from './FileTree'
