@@ -109,6 +109,10 @@ export const SOCIAL_LINKS: SocialLink[] = [
 import altiumIcon from '/src/assets/altium-designer-icon.png'
 import imhexIcon from '/src/assets/imhex-icon.svg'
 import freecadIcon from '/src/assets/freecad-icon.png'
+import reIcon from '/src/assets/binary-code.png'
+import pcbIcon from '/src/assets/printed-circuit-board.png'
+import modelIcon from '/src/assets/3d-modeling.png'
+
 export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
   SKILLS_ENABLED: true,
   SKILLS_DATA: [
@@ -202,7 +206,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         },
         {
           name: 'PCB Design',
-          icon: 'icon-[mdi--integrated-circuit]',
+          icon: pcbIcon,
           url: 'https://yggdrasil.werwolv.net/',
         },
         {
@@ -212,8 +216,13 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         },
         {
           name: 'Reverse Engineering',
-          icon: 'icon-[pixelarticons--binary-sharp]',
+          icon: reIcon,
           url: 'https://github.com/Atmosphere-NX/Atmosphere/',
+        },
+        {
+          name: '3D Modeling',
+          icon: modelIcon,
+          url: 'https://www.freecad.org/',
         },
       ],
     },
