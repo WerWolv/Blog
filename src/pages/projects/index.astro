@@ -50,11 +50,25 @@ const projects = await getAllProjects()
                 <a
                   href={project.data.website}
                   target="_blank"
-                  class="inline-flex items-center justify-between font-semibold text-lg/relaxed "
+                  class="inline-flex items-center justify-between font-semibold text-lg/relaxed  hover:underline"
                 >
                   {project.data.name}
                 </a>
                 <p class="pr-0 sm:pr-14 text-muted-foreground mb-3 mr-3">{project.data.description}</p>
+
+                {project.data.subprojects && project.data.subprojects.length > 0 && (
+                  <ul class="mb-3 flex flex-col gap-1.5 border-l-2 border-muted border-dashed pl-4">
+                    {project.data.subprojects.map((sub) => (
+                      <li>
+                        <a href={sub.url} target="_blank" class="font-medium text-sm hover:underline">
+                          {sub.name}
+                        </a>
+                        <br />
+                        <span class="text-muted-foreground text-sm ml-2">{sub.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 <br />
                 <hr />

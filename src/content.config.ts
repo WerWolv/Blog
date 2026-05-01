@@ -52,6 +52,15 @@ const projects = defineCollection({
       fork: z.number(),
       draft: z.boolean().default(false),
       order: z.number().default(9999),
+      subprojects: z
+        .array(
+          z.object({
+            name: z.string(),
+            description: z.string(),
+            url: z.string(),
+          })
+        )
+        .optional(),
     }),
 })
 

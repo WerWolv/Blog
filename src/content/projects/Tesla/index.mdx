@@ -1,7 +1,7 @@
 ---
 name: 'Tesla'
 description: '⚡ A homebrew overlay ecosystem for Horizon (Nintendo Switch)'
-githubUrl: 'https://github.com/WerWolv/libtesla'
+githubUrl: 'https://github.com/WerWolv/Tesla-Menu'
 website: 'https://tesla.werwolv.net'
 type: 'image'
 icon: 'https://camo.githubusercontent.com/136839ee509a12ab908a208694b2f586df03847322a90cc092ae2aa590a44ca6/68747470733a2f2f692e696d6775722e636f6d2f666877796a62642e706e67'
@@ -9,4 +9,14 @@ star: 0
 fork: 0
 order: 3
 imageClass: rounded-lg
+subprojects:
+  - name: 'Tesla-Menu'
+    description: 'Overlay support library and GUI framework for the Overlay Ecosystem'
+    url: 'https://github.com/WerWolv/libtesla'
+  - name: 'nx-ovlloader'
+    description: 'A fork of nx-hbloader that can chainload overlays'
+    url: 'https://github.com/WerWolv/nx-ovlloader'
+  - name: 'ovl-sysmodules'
+    description: 'The first overlay ever created, allows dynamic loading and unloading of sysmodules'
+    url: 'https://github.com/WerWolv/ovl-sysmodules'
 ---
