@@ -122,12 +122,6 @@
     --layout-change-width: 136rem;
   }
 
-  @media (min-width: 136rem) {
-    :root {
-      --layout-width: 56rem;
-    }
-  }
-
   /* Global Layout Width Utility Class */
   .global-layout-width {
     max-width: var(--layout-width);
