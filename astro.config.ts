@@ -22,6 +22,9 @@ export default defineConfig({
     prefetchAll: true,
     defaultStrategy: 'viewport',
   },
+  build: {
+    assets: 'assets',
+  },
   vite: {
     plugins: [tailwindcss()],
     assetsInclude: ['**/*.pdf'],
