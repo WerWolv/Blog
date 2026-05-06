@@ -49,7 +49,6 @@ const ThemeToggle = () => {
   const applyTheme = (newTheme: string) => {
     const root = document.documentElement
 
-    // 添加过渡类
     root.classList.add('disable-transition')
 
     const isDark = newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -61,19 +60,27 @@ const ThemeToggle = () => {
       metaThemeColor.setAttribute('content', isDark ? '#09090b' : '#FFFFFF')
     }
 
-    // 移除过渡类
     setTimeout(() => {
       root.classList.remove('disable-transition')
     }, 300)
   }
 
-  const handleClick = () => {
+  const switchTheme = () => {
     const themeMap = {
       light: 'dark',
       dark: 'system',
       system: 'light',
     }
+
     themeStore.set(themeMap[theme] as 'light' | 'dark' | 'system')
+  }
+
+  const handleClick = () => {
+    const html = document.documentElement
+    html.style.viewTransitionName = 'theme-transition'
+
+    if (!document.startViewTransition) switchTheme()
+    document.startViewTransition(switchTheme)
   }
 
   return (
