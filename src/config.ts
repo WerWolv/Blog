@@ -60,6 +60,10 @@ export const FOOTER_LINKS: Link[] = [
     name: 'About',
     url: '/about',
   },
+  {
+    name: 'RSS',
+    url: '/atom.xml',
+  },
 ]
 // get icon https://icon-sets.iconify.design/
 export const SOCIAL_LINKS: SocialLink[] = [
