@@ -222,14 +222,14 @@ import datasheet from './assets/datasheet.pdf'
 Datasheet for the <PdfDocument document={datasheet} fragment="%5B%7B%22num%22%3A103%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C124%2C693%2Cnull%5D">STM32F446</PdfDocument> microcontroller.
 </MdxPreview> 
 
-## `<PencilUnderline />`
+## `<PencilMarked />`
 
 This component renders a hand-drawn pencil underline effect for emphasizing text.
 
 <MdxPreview>
-import PencilUnderline from '@/PencilUnderline'
+import PencilMarked from '@/PencilMarked'
 
-This is a <PencilUnderline color="orange">pencil underline</PencilUnderline> effect. Every single one will look different, just like if you <PencilUnderline color="lightblue">would draw it by hand</PencilUnderline>.
+This is a <PencilMarked color="orange" mode="underline">pencil underline</PencilMarked> effect. Every single one <PencilMarked mode="highlighter" color="yellow">will look different</PencilMarked>, just like if you <PencilMarked color="lightblue" mode="double-arc">would draw it by hand</PencilMarked>.
 </MdxPreview>
 
 ## `<Quote />`

@@ -15,7 +15,7 @@ import TechnicalTerm from '@/TechnicalTerm'
 import PdfDocument from '@/PdfDocument'
 import Steps from '@/Steps'
 import NotePanel from '@/NotePanel'
-import PencilUnderline from '@/PencilUnderline'
+import PencilMarked from '@/PencilMarked'
 import Figure from '@/Figure'
 
 import riscv_spec from './assets/riscv-spec.pdf'
@@ -97,7 +97,7 @@ This, of course, currently does absolutely nothing since there's no code for it 
 
 ## Compiling a Toolchain
 
-To compile anything to run on the target, the first thing we need is a toolchain. Compiling it by hand is generally a bit of a pain since you need to get the correct version of various different tools and libraries and then configure and compile them <PencilUnderline color="gray">in the correct order</PencilUnderline> (sometimes even multiple times with different configurations!). Luckily for us though, the :link[crosstool-ng Project]{#crosstool-ng/crosstool-ng} exists and handles all of that for us. With it we can simply configure the toolchain we need and then let it do all the work.
+To compile anything to run on the target, the first thing we need is a toolchain. Compiling it by hand is generally a bit of a pain since you need to get the correct version of various different tools and libraries and then configure and compile them <PencilMarked color="gray" mode="underline">in the correct order</PencilMarked> (sometimes even multiple times with different configurations!). Luckily for us though, the :link[crosstool-ng Project]{#crosstool-ng/crosstool-ng} exists and handles all of that for us. With it we can simply configure the toolchain we need and then let it do all the work.
 
 Since we're planing on building an application that later on runs on 32-bit RISC-V Linux, we need a toolchain that targets `riscv32-unknown-linux-gnu`. This will give us a GCC compiler that can compile C code for our target platform as well as glibc as the C standard library implementation to interface with the Kernel.
 

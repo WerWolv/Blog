@@ -24,7 +24,7 @@
     "./NotePanel": "./src/NotePanel.tsx",
     "./Oscilloscope": "./src/Oscilloscope.tsx",
     "./PdfDocument": "./src/PdfDocument.tsx",
-    "./PencilUnderline": "./src/PencilUnderline.tsx",
+    "./PencilMarked": "./src/PencilMarked.tsx",
     "./Quote": "./src/Quote.tsx",
     "./Spoiler": "./src/Spoiler.tsx",
     "./Steps": "./src/Steps.tsx",

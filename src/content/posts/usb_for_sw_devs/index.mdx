@@ -12,7 +12,7 @@ pinned: true
 ---
 
 import NotePanel from '@/NotePanel'
-import PencilUnderline from '@/PencilUnderline'
+import PencilMarked from '@/PencilMarked'
 import PdfDocument from '@/PdfDocument'
 
 import { Image } from 'astro:assets'
@@ -23,7 +23,7 @@ import usb_spec from './assets/usb_20.pdf'
 
 Say you're being handed a USB device and told to write a driver for it. Seems like a daunting task at first, right? Writing drivers means you have to write Kernel code, and writing Kernel code is hard, low level, hard to debug and so on.
 
-<PencilUnderline color="orange">None of this is actually true though</PencilUnderline>. Writing a driver for a USB device is actually not much more difficult than writing an application that uses Sockets.
+<PencilMarked color="orange" mode="underline">None of this is actually true though</PencilMarked>. Writing a driver for a USB device is actually not much more difficult than writing an application that uses Sockets.
 
 This post aims to be a high level introduction to using USB for people who may not have worked with Hardware too much yet and just want to use the technology. There are amazing resources out there such as :link[USB in a NutShell]{id="https://www.beyondlogic.org/usbnutshell/usb1.shtml"} that go into a lot of detail about how USB precisely works (check them out if you want more information), they are however not really approachable for somebody who has never worked with USB before and doesn't have a certain background in Hardware. You don't need to be an Embedded Systems Engineer to use USB the same way you don't need to be a Network Specialist to use Sockets and the Internet.
 
@@ -201,7 +201,7 @@ There are a few more standardized request types (and some devices even add their
 
 ## Requesting a Descriptor
 
-Descriptors are binary structures that are generally hardcoded into the firmware of a USB device. They are what tells the host exactly what the device is, what it's capable of and what driver it would like the OS to load. So when you plug in a device, the host simply sends multiple `GET_DESCRIPTOR` requests to the standardized Control Endpoint at ID `0x00` to get back a struct that gives it all the information it needs for enumeration. And the cool thing is, <PencilUnderline color="orange">_we can do that too!_</PencilUnderline>
+Descriptors are binary structures that are generally hardcoded into the firmware of a USB device. They are what tells the host exactly what the device is, what it's capable of and what driver it would like the OS to load. So when you plug in a device, the host simply sends multiple `GET_DESCRIPTOR` requests to the standardized Control Endpoint at ID `0x00` to get back a struct that gives it all the information it needs for enumeration. And the cool thing is, <PencilMarked color="orange" mode="underline">_we can do that too!_</PencilMarked>
 
 
 Instead of a `GET_STATUS` request, we now send a `GET_DESCRIPTOR` request:
@@ -369,7 +369,7 @@ This is what the direction is for.
 - `OUT` endpoints are for when the Host wants to transmit some data. It makes a request on an `OUT` endpoint and then immediately transfers the data it wants to send over. The Device in this case only acknowledges (`ACK`) that it received the data but won't send any additional data back.
 
 <NotePanel type="hint">
-The way I remember the directions is using that master-slave analogy. The master is very self-centered and always refers to everything from <PencilUnderline>its perspective</PencilUnderline>. 
+The way I remember the directions is using that master-slave analogy. The master is very self-centered and always refers to everything from <PencilMarked color="gray" mode="underline">its perspective</PencilMarked>. 
 - `IN`:  I want to get data in
 - `OUT`: I want to send data out
 </NotePanel>
