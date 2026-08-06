@@ -171,7 +171,7 @@ export const SKILLSSHOWCASE_CONFIG: SkillsShowcaseConfig = {
         {
           name: 'Ghidra',
           icon: 'icon-[devicon--ghidra]',
-          url: 'https//www.nsa.gov/ghidra/',
+          url: 'https://www.nsa.gov/ghidra/',
         },
         {
           name: 'ImHex',
