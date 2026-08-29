@@ -12,14 +12,13 @@ struct SevenBitEncodedInt {
 } [[sealed, format("transformSevenBitEncodedInt"), transform("transformSevenBitEncodedInt")]];
 
 fn transformSevenBitEncodedInt(ref auto encodedInt) {
-    u32 result = 0;
-    for (u32 i = 0, i < std::core::member_count(encodedInt.bytes), i += 1) {
-        result <<= 7;
-        result |= (encodedInt.bytes[i].byte & 0x7F);
-    }
-    
-    return result;
-};
+  u64 result = 0;
+
+  for (u32 i = 0, i < std::core::member_count(encodedInt.bytes), i += 1) {
+    result |= (encodedInt.bytes[i].byte & 0x7F) << (i * 7);
+  }
+  
+  retu
 
 struct String {
     SevenBitEncodedInt size;
@@ -49,7 +48,7 @@ struct KeyValuePair<Key, Value> {
     Value value;
 } [[name(std::format("[{}]", this.key))]];
 
-enum Viewpoint : u32 {
+enum Viewpoint : s32 {
     None,
     Front,
     Right,
@@ -65,11 +64,11 @@ struct Vector3 {
 };
 
 struct List<T> {
-    u32 count;
+    s32 count;
     T items[count];
 };
 
-enum ActorType : u32 {
+enum ActorType : s32 {
   None,
   Ladder,
   Bouncer,
@@ -185,14 +184,15 @@ struct LevelSaveData {
     List<KeyValuePair<s32, s32>> pivotRotations;
     Object<float> lastStableLiquidHeight;
     Object<String> scriptingState;
-    bool firstVisit;
+    bool firstVsisit;
     WinConditions filledConditions;
 };
 
 struct FezSaveFile {
-    u64 fileTime;
-    u64 version;
-    u64 creationTime;
+    s64 fileTime;
+
+    s64 versionMaybe;
+    s64 creationTime;
     bool finished32;
     bool finished64;
     bool hasFpView;
@@ -203,14 +203,14 @@ struct FezSaveFile {
     Object<String> level;
     Viewpoint view;
     Vector3 ground;
-    u64 timeOfDay;
+    s64 timeOfDay;
     List<Object<String>> unlockedWarpDestinations;
-    u32 keys;
-    u32 cubeShards;
-    u32 secretCubes;
-    u32 collectedParts;
-    u32 collectedOwls;
-    u32 piecesOfHeart;
+    s32 keys;
+    s32 cubeShards;
+    s32 secretCubes;
+    s32 collectedParts;
+    s32 collectedOwls;
+    s32 piecesOfHeart;
     List<Object<String>> maps;
     List<ActorType> artifacts;
     List<Object<String>> earnedAchievements;
@@ -226,7 +226,7 @@ struct FezSaveFile {
     List<KeyValuePair<Object<String>, LevelSaveData>> worlds;
     bool scoreDirty;
     bool hasDoneHeartReboot;
-    u64 playTime;
+    s64 playTime;
     bool isNew;
 } [[fixed_size(0xA000)]];
 

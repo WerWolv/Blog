@@ -6,6 +6,7 @@ cover: assets/cover.png
 author: WerWolv
 pubDate: 2026-08-27
 recommend: true
+pinned: true
 tags: ['ImHex', 'File Formats', 'FEZ']
 license: 'CC-BY-NC-SA-4.0'
 ---
@@ -13,6 +14,7 @@ license: 'CC-BY-NC-SA-4.0'
 import Figure from '@/Figure'
 import NotePanel from '@/NotePanel'
 import TechnicalTerm from '@/TechnicalTerm'
+import Steps from '@/Steps'
 
 ## Introduction
 
@@ -28,7 +30,7 @@ FEZ was released all the way back in 2012. Still, if you haven't played it yet a
 
 ## Getting Started
 
-The first thing we need is the save file. I downloaded the game from Steam, started it and played for a little bit until it saved. Then I went looking through my filesystem and found the save file under `/home/werwolv/.local/share/FEZ/SaveSlot2`. On Windows, it will be elsewhere.
+The first thing we need is the save file. I downloaded the game from Steam (the latest full release currently available, released 2. December 2016), started it and played for a little bit until it saved. Then I went looking through my filesystem and found the save file under `/home/werwolv/.local/share/FEZ/SaveSlot2`. On Windows, it will be elsewhere.
 
 Opening the file in ImHex shows this:
 
@@ -114,11 +116,11 @@ FezSaveFile saveFile @ 0x00;
 
 This instantiates the `FezSaveFile` pattern object at address `0x00` of our file.
 
-Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a 64-bit value that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything, but it's not really all that interesting, so we can simply place a `u64` in its place in the Pattern to read it.
+Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a little endian, 64-bit value (a `long` in C#) that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything, but it's not really all that interesting, so we can simply place a `s64` in its place in the Pattern to read it.
 
 ```pl title="fez.hexpat"
 struct FezSaveFile {
-  u64 fileTime;
+  s64 fileTime;
 };
 ```
 
@@ -170,11 +172,11 @@ Looking at the types of those values allows them to be easily converted to the I
 ```pl title="fez.hexpat"
 struct FezSaveFile {
   // From PCSaveDevice.cs
-  u64 fileTime;
+  s64 fileTime;
 
   // From SaveFileOperations.cs
-  u64 someStaticValue; // Could be a save file version number?
-  u64 creationTime;
+  s64 someStaticValue; // Could be a save file version number?
+  s64 creationTime;
   bool finished32;
   bool finished64;
   bool hasFpView;
@@ -296,9 +298,8 @@ fn transformSevenBitEncodedInt(ref auto encodedInt) {
 
   // Loop over all the bytes we placed before
   for (u32 i = 0, i < std::core::member_count(encodedInt.bytes), i += 1) {
-    // Take 7 bits from each of the bytes and stick them back together
-    result <<= 7;
-    result |= (encodedInt.bytes[i].byte & 0x7F);
+    // Each byte contains the next more-significant group of 7 bits
+    result |= (encodedInt.bytes[i].byte & 0x7F) << (i * 7);
   }
   
   return result;
@@ -332,12 +333,12 @@ foreach (KeyValuePair<string, bool> oneTimeTutorial in sd.OneTimeTutorials)
 }
 ```
 
-Back to the code from before, we can define a few more types now to finally parse this construct.
+Back to the code from before, we can define a few more types now to finally parse this construct. This time using a `s32` because `Count` is a `int` in C#.
 
 ```pl title="fez.hexpat"
 struct List<T> {
   // Read the number of items 
-  u32 count;
+  s32 count;
 
   // Place an array of `count` items down
   T items[count];
@@ -391,7 +392,7 @@ public enum ActorType
 ```
 
 ```pl title="fez.hexpat"
-enum ActorType : u32
+enum ActorType : s32
 {
   None,
   Ladder,
@@ -402,7 +403,7 @@ enum ActorType : u32
 };
 ```
 
-This type can then simply be used in place of a `u32` and gives us a nicer display:
+This type can then simply be used in place of a `s32` and gives us a nicer display:
 
 <Figure src={import("assets/artifacts.png")} alt="ActorType enum as seen in ImHex"/>
 
@@ -441,4 +442,31 @@ At this point, you should be able to look at the Hex Editor View and see every s
 
 If you're interested in how I did it, you can take a look at :link[My Pattern]{id="https://gist.github.com/WerWolv/b0b616853b03a86fb0214c2e4fbfcbdb"}. 
 
-If you have any questions about the process, ImHex or the Pattern Language itself, please reach out on the :link[ImHex Discord Server]{id="https://discord.gg/X63jZ36xBY"}, via :link[Discord DMs @werwolv]{id="https://discord.com/users/181738643008782346"} or by [email at `hey@werwolv.net`](mailto:hey@werwolv.net).
+## Wrapping things up
+
+After reading this post you should have a basic understanding of how to reverse engineer a binary file format. Of course, not all programs will be as easy to decompile and analyze as this one but the general workflow remains the same:
+
+<Steps>
+<div>
+    **Check if the file is in a known format**
+
+    This can be done in various ways, ImHex magic detection and tools like binwalk can help a lot. If it is an existing format, there might be tools available already to parse that format. Otherwise you may be able to look at the specification
+</div>
+<div>
+    **Find the piece of code that parses or generates that file**
+
+    This usually means looking at the program's Source Code if available or to decompile the program first using a tool that fits the language used. Rider works great for .NET, Ghidra, IDA or Binary Ninja for native-compiled programs, Recaf for JVM languages. What helps me is to look for library calls for doing File I/O or for strings mentioning (parts of) the generated or loaded file name.
+</div>
+<div>
+    **Analyze the code and find the building blocks used in the file**
+
+    Most file formats want the same thing: To store integers, booleans, strings and other data structures. Identifying them is the first step to understanding the file step by step
+</div>
+<div>
+    **Write a Pattern File to document your findings and verify their validity**
+
+    Patterns are great not only for decoding the file once you know how it works but also for documenting and verifying your findings along the way.
+</div>
+</Steps>
+
+If you have any questions about the process, ImHex or the Pattern Language itself, feel free to reach out on the :link[ImHex Discord Server]{id="https://discord.gg/X63jZ36xBY"}, via :link[Discord DMs @werwolv]{id="https://discord.com/users/181738643008782346"} or by [email at `hey@werwolv.net`](mailto:hey@werwolv.net).
