@@ -1,7 +1,7 @@
 ---
-title: Reverse Engineering unknown file formats with ImHex
+title: Reverse Engineering Unknown File Formats with ImHex
 description: |
-  An Introduction to File Formats and ImHex by Reverse Engineering FEZ's Save File format
+  An Introduction to File Formats and ImHex by Reverse Engineering FEZ's Save File Format
 cover: assets/cover.png
 author: WerWolv
 pubDate: 2026-08-27
@@ -16,19 +16,19 @@ import TechnicalTerm from '@/TechnicalTerm'
 
 ## Introduction
 
-Over the years I've been asked countless times the same thing:
+Over the years I've been asked the same question countless times:
 
 <Figure src={import("assets/help.png")} alt="Person on Discord asking for help reverse engineering a file format"/>
 
-I usually couldn't really give them a real answer except "look at the decompiled code of whatever program reads/writes these files and work backwards from there". This post is meant to change that. We'll go from a completely custom binary save file for the game :link[FEZ]{id="https://fezgame.com/"} to a full definition written in the Pattern Language which is part of :link[ImHex]{id="https://imhex.werwolv.net"}, the Hex Editor I've been developing for the past few years. It is free, Open Source and available on any Operating System (or even through the browser if you prefer that: :link[ImHex Web]{id="https://web.imhex.werwolv.net/nightly"})
+I usually couldn't really give them a good answer except, "Look at the decompiled code of whatever program reads/writes these files and work backwards from there." This post is meant to change that. We'll go from a completely custom binary save file for the game :link[FEZ]{id="https://fezgame.com/"} to a full definition written in the Pattern Language, which is part of :link[ImHex]{id="https://imhex.werwolv.net"}, the hex editor I've been developing for the past few years. It is free, open source and available on any operating system (or even through the browser if you prefer that: :link[ImHex Web]{id="https://web.imhex.werwolv.net/nightly"}).
 
 <NotePanel type="alert" title="Spoiler Warning">
-FEZ Released all the way back in 2012; still if you haven't played it yet and want to get the full experience, I highly recommend playing it before you continue reading here. Some of the code shown here will contain heavy spoilers for secrets for end game content that might ruin your experience. You have been warned.
+FEZ was released all the way back in 2012. Still, if you haven't played it yet and want to get the full experience, I highly recommend playing it before you continue reading. Some of the code shown here will contain heavy spoilers for secrets and endgame content that might ruin your experience. You have been warned.
 </NotePanel>
 
 ## Getting Started
 
-First thing we need is the Save File. I downloaded the game from Steam, started it and played for a little bit until it saved. Then I went looking through my filesystem to find the save file under `/home/werwolv/.local/share/FEZ/SaveSlot2` for me, on Windows it will be elsewhere.
+The first thing we need is the save file. I downloaded the game from Steam, started it and played for a little bit until it saved. Then I went looking through my filesystem and found the save file under `/home/werwolv/.local/share/FEZ/SaveSlot2`. On Windows, it will be elsewhere.
 
 Opening the file in ImHex shows this:
 
@@ -47,26 +47,26 @@ Hex View  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
 00000090  54 5F 56 41 4C 56 45 5F  41 01 01 13 44 4F 54 5F  T_VALVE_A...DOT_
 ```
 
-This already reveals a few things, the file seems to be uncompressed and unencrypted as seen by the plain text strings and other patterns in the file that can be easily spotted by just looking at the bytes and characters. The data also doesn't have a file magic (some readable text at the start of the file to make it more easily identifiable) and it doesn't look like anything standard as ImHex can't identify its type directly either.
+This already reveals a few things. The file seems to be uncompressed and unencrypted, as seen by the plain-text strings and other patterns in the file that can be easily spotted by just looking at the bytes and characters. The data also doesn't have a file magic (some readable text at the start of the file to make it more easily identifiable), and it doesn't look like anything standard, as ImHex can't identify its type directly either.
 
 <Figure src={import("assets/magic_info.png")} alt="Magic file information from ImHex"/>
 
-Without any more information, we're basically stuck here. The data can mean anything and only the program generating and parsing them can make sense of it.
+Without any more information, we're basically stuck here. The data can mean anything, and only the program generating and parsing it can make sense of it.
 
 ## Decompiling the Game
 
 ### Finding the right files
 
-Clicking on the Gear icon on the Steam Page and selecting `Manage -> Browse local files` brings us to the Game's Binary location. What immediately sticks out are files like `System.Core.dll` or `mscorlib.dll`. The game is written in the C# Programming Language which is generally really easy to reverse engineer. Tools like :link[JetBrains Rider]{id="https://www.jetbrains.com/rider/"} can decompile the binaries back to (what looks like) the original source code.
+Clicking on the gear icon on the Steam page and selecting `Manage -> Browse local files` brings us to the game's binary location. What immediately sticks out are files like `System.Core.dll` or `mscorlib.dll`. The game is written in the C# programming language, which is generally really easy to reverse engineer. Tools like :link[JetBrains Rider]{id="https://www.jetbrains.com/rider/"} can decompile the binaries back to what looks like the original source code.
 
-For that, we can open the Game's Folder as a Project and then simply `Right Click -> View in Assembly Explorer` for all the `.dll` files that look interesting. To me, particularly interesting looking were `FEZ.exe`, `FezEngine.dll`, `Common,dll`, `ContentSerialization.dll` and `EasyStorage.dll`. The rest are system libraries or external dependencies that look unrelated to what we're trying to do here. 
+For that, we can open the game's folder as a project and then simply `Right Click -> View in Assembly Explorer` for all the `.dll` files that look interesting. To me, particularly interesting were `FEZ.exe`, `FezEngine.dll`, `Common.dll`, `ContentSerialization.dll` and `EasyStorage.dll`. The rest are system libraries or external dependencies that look unrelated to what we're trying to do here.
 
 ### Finding the right functions
 
-Just clicking through the namespaces quickly reveals an interesting looking file: `EasyStorage -> PCSaveDevice`
-In the constructor of that class, we can also immediately see `string str = "SaveSlot" + (object) index;` which looks like it's building the name of our file `SaveSlot2` so we found the right place for sure.
+Just clicking through the namespaces quickly reveals an interesting-looking file: `EasyStorage -> PCSaveDevice`.
+In the constructor of that class, we can also immediately see `string str = "SaveSlot" + (object) index;`, which looks like it's building the name of our file, `SaveSlot2`, so we found the right place for sure.
 
-Scrolling down a bit, we can find a function called `Save` that creates a byte buffer and starts filling it in using a `BinaryWriter` stream before saving it down to our save file location. Bingo!
+Scrolling down a bit, we can find a function called `Save` that creates a byte buffer and starts filling it in using a `BinaryWriter` stream before saving it to our save file location. Bingo!
 
 ```csharp title="PCSaveDevice.cs"
 public virtual bool Save(string fileName, SaveAction saveAction)
@@ -98,13 +98,13 @@ public virtual bool Save(string fileName, SaveAction saveAction)
 
 ## Writing the ImHex Pattern
 
-### Humble beginnings
+### Humble Beginnings
 
-Now that we found where the save file is being generated, we can start writing a Pattern File in ImHex to decode the data. Open the `Pattern editor` tab to reveal a text editor where we can write our source code into.
+Now that we've found where the save file is being generated, we can start writing a Pattern file in ImHex to decode the data. Open the `Pattern Editor` tab to reveal a text editor where we can write our source code.
 
-We can start simple, create a `struct FezSaveFile` and placing it at the start of the file using the `@` placement operator.
+We can start simply by creating a `struct FezSaveFile` and placing it at the start of the file using the `@` placement operator.
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct FezSaveFile {
   // Struct Definition
 };
@@ -114,7 +114,7 @@ FezSaveFile saveFile @ 0x00;
 
 This instantiates the `FezSaveFile` pattern object at address `0x00` of our file.
 
-Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());` which writes the current time stamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the Docs, this is simply a 64-bit value that represents the number of 100ns intervals that have passed since the year of our lord 1601 A.D. We could of course properly decode this value and everything but it's not really all that interesting so we can simply place a `u64` in its place in the Pattern to read it.
+Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a 64-bit value that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything, but it's not really all that interesting, so we can simply place a `u64` in its place in the Pattern to read it.
 
 ```pl title="fez.hexpat"
 struct FezSaveFile {
@@ -122,17 +122,17 @@ struct FezSaveFile {
 };
 ```
 
-After pressing on the <span class="icon-[lucide--play]" /> button at the bottom of the Pattern Editor (or pressing the `F5` key), not only does the region of that value get highlighted in the Hex Editor View now, it also appears in the Pattern tree in the Pattern Data View.
+After clicking the <span class="icon-[lucide--play]" /> button at the bottom of the Pattern Editor (or pressing the `F5` key), the region of that value is now highlighted in the Hex Editor View, and it also appears in the pattern tree in the Pattern Data View.
 
 <Figure src={import("assets/hex_editor_and_pattern_data.png")} alt="Highlighted Bytes in the Hex Editor and decoded value in the Pattern Data View"/>
 
 <NotePanel type="hint" title="[[fixed_size]] attribute">
-One thing we can also see is that the code ensures that the save file is always `0xA000` bytes long. If it's shorter it will pad it out and if it was longer, a `InvalidOperationException` would be thrown. This maps incredibly well to the `[[fixed_size(0xA000)]]` attribute that can be attached to the `FezSaveFile` to ensure that. This is entirely optional but helps documenting the official behavior.
+One thing we can also see is that the code ensures that the save file is always `0xA000` bytes long. If it's shorter, it will pad it out, and if it is longer, an `InvalidOperationException` will be thrown. This maps incredibly well to the `[[fixed_size(0xA000)]]` attribute that can be attached to `FezSaveFile` to ensure that. This is entirely optional but helps document the official behavior.
 </NotePanel>
 
-### The actual Save Data
+### The Actual Save Data
 
-Back to the C# code, the next thing that's done is to call out to the `saveAction` callback which is implemented elsewhere. Rider helps here thankfully as you can just CTRL-Click on the name of the `Load` function to find definitions. There we see a few places it's called from but the interesting one is in `GameStateManager.cs SaveInternal()`.
+Back to the C# code, the next thing that's done is to call out to the `saveAction` callback, which is implemented elsewhere. Thankfully, Rider helps here, as you can just Ctrl-click on the name of the `Save` function to find definitions. There we see a few places it's called from, but the interesting one is in `GameStateManager.cs SaveInternal()`.
 
 <Figure src={import("assets/find_usages.png")} alt="Find usages in JetBrains Rider"/>
 
@@ -148,7 +148,7 @@ private void SaveInternal(bool ngpBackup)
 }
 ```
 
-There we can see that the actual dumping of the save data is delegated out to the `DoSave()` function which calls `SaveFileOperations.Write()`. This is the juicy stuff now. Here we can see aaaaaaalll the different fields that are being written out to the binary.
+There we can see that the actual dumping of the save data is delegated to the `DoSave()` function, which calls `SaveFileOperations.Write()`. This is the juicy stuff now. Here we can see aaaaaaalll the different fields that are being written out to the binary.
 
 ```cs title="GameStateManager.cs"
 public static void Write(CrcWriter w, SaveData sd)
@@ -167,7 +167,7 @@ public static void Write(CrcWriter w, SaveData sd)
 
 Looking at the types of those values allows them to be easily converted to the ImHex Pattern:
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct FezSaveFile {
   // From PCSaveDevice.cs
   u64 fileTime;
@@ -186,7 +186,7 @@ struct FezSaveFile {
 
 ### Objects and Strings
 
-The next part is interesting. Here a list of String -> Bool Key-value pairs is being serialized. First the number of pairs is being stored followed by that amount of serialized pairs.
+The next part is interesting. Here, a list of String -> Bool key-value pairs is being serialized. First, the number of pairs is stored, followed by that number of serialized pairs.
 
 ```cs title="GameStateManager.cs"
 w.Write(sd.OneTimeTutorials.Count);
@@ -209,9 +209,9 @@ public static void WriteObject(this CrcWriter writer, string s)
 }
 ```
 
-Objects seem to be defined as being something that may or may not exist. First a `bool` is written to the file that represents whether or not the object is `null`. If it is `null`, that's the end of it and we don't write down anything more. If it's not `null` though, we serialize the value. In the Pattern Language, this looks like this:
+Objects seem to be defined as something that may or may not exist. First, a `bool` is written to the file that represents whether or not the object is `null`. If it is `null`, that's the end of it, and we don't write down anything more. If it's not `null`, though, we serialize the value. In the Pattern Language, this looks like this:
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct Object<T> {
   bool isValid;
   if (isValid)
@@ -219,7 +219,7 @@ struct Object<T> {
 };
 ```
 
-This code defines a new template struct called `Object`. It places a `bool` in the output file, then checks if that `bool` is `true` and only if it is, it places a value of the template parameter's type down.
+This code defines a new template struct called `Object`. It places a `bool` in the output file, then checks if that `bool` is `true`. Only if it is does it place a value of the template parameter's type.
 
 Next we need to see how `string` types are serialized. There's another function of the `BinaryWriter` that does this:
 
@@ -263,11 +263,11 @@ protected void Write7BitEncodedInt(int value)
 }
 ```
 
-`Write7BitEncodedInt` looks a big daunting but after playing it through with some values, all this does is basically use the <TechnicalTerm client:load term="MSB">**Most Significant Bit**<br />The left-most bit in a byte that carries the largest numerical value</TechnicalTerm> of each byte as a flag to tell the parser if there's another byte still coming and the other 7 bits are the actual encoded value. 
+`Write7BitEncodedInt` looks a bit daunting, but after playing through it with some values, all this does is use the <TechnicalTerm client:load term="MSB">**Most Significant Bit**<br />The leftmost bit in a byte that carries the largest numerical value</TechnicalTerm> of each byte as a flag to tell the parser if there's another byte still coming. The other 7 bits are the actual encoded value.
 
 In the Pattern Language this can be implemented like this:
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct SevenBitEncodedIntByte {
   // Read a byte
   u8 byte;
@@ -286,7 +286,7 @@ struct SevenBitEncodedInt {
 
 Additionally, to make this type a bit easier to work with, we can use the `[[format]]` attribute to display the decoded integer value in the Pattern Data View and the `[[transform]]` attribute so the rest of our code can simply read from a variable of this type and get back the decoded integer value instead:
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct SevenBitEncodedInt {
     SevenBitEncodedIntByte bytes[while(true)];
 } [[format("transformSevenBitEncodedInt"), transform("transformSevenBitEncodedInt")]];
@@ -306,9 +306,9 @@ fn transformSevenBitEncodedInt(ref auto encodedInt) {
 ```
 
 Now that all of this is done, we can finally define our String type. Again with a nice `[[format]]` function so we can see the string directly in the UI.
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct String {
-  // Place a 
+  // Read the string's size
   SevenBitEncodedInt size;
   char string[size];
 } [[format("formatString")]];
@@ -334,7 +334,7 @@ foreach (KeyValuePair<string, bool> oneTimeTutorial in sd.OneTimeTutorials)
 
 Back to the code from before, we can define a few more types now to finally parse this construct.
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct List<T> {
   // Read the number of items 
   u32 count;
@@ -349,9 +349,9 @@ struct KeyValuePair<Key, Value> {
 };
 ```
 
-This all together now lets us finally decode the list. Take a step back for a bit and see how all of this came together and how it maps to the C# code.
+All of this together now lets us finally decode the list. Take a step back for a bit and see how all of this came together and how it maps to the C# code.
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct FezSaveFile {
   // ...
   List<               // A size-prefixed list containing...
@@ -375,7 +375,7 @@ foreach (ActorType artifact in sd.Artifacts)
   w.Write((int) artifact);
 ```
 
-This writes down not integers directly but an Enumeration instead. We could just treat it as an `int` like the serializer code does but it would be nicer to keep the names in ImHex available as well. 
+This writes down not integers directly, but an enumeration instead. We could just treat it as an `int` like the serializer code does, but it would be nicer to keep the names available in ImHex as well.
 
 The definition of the `enum` in C# can be copy-pasted over almost 1:1:
 ```cs title="ActorType.cs"
@@ -390,7 +390,7 @@ public enum ActorType
 }
 ```
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 enum ActorType : u32
 {
   None,
@@ -402,11 +402,11 @@ enum ActorType : u32
 };
 ```
 
-This type can then simply be used in place of a u32 and gives us a nicer display:
+This type can then simply be used in place of a `u32` and gives us a nicer display:
 
 <Figure src={import("assets/artifacts.png")} alt="ActorType enum as seen in ImHex"/>
 
-### More Sub-types
+### More Subtypes
 
 The same pattern as above keeps on going for a while longer until we reach the end where we have some nested serialization:
 
@@ -420,7 +420,7 @@ foreach (KeyValuePair<string, LevelSaveData> keyValuePair in sd.World)
 
 This maps really nicely to a new struct that we can call `LevelSaveData` and just keep going in there as before:
 
-```pl title="fez.hexpat
+```pl title="fez.hexpat"
 struct LevelSaveData {
   // ...
 };
@@ -435,10 +435,10 @@ You should now have everything that's needed to decode the rest of the format yo
 
 ## The Fruits of our Labour
 
-At this point, you should be able to look at the Hex Editor view and see every single byte (except the large padding at the end) to be highlighted with some color. You can now browse through the Pattern Data View and inspect what all these different values mean and even modify them by double clicking on the value!
+At this point, you should be able to look at the Hex Editor View and see every single byte (except the large padding at the end) highlighted with some color. You can now browse through the Pattern Data View and inspect what all these different values mean and even modify them by double-clicking the value!
 
 <Figure src={import("assets/results.png")} alt="Fully decoded Save File in ImHex"/>
 
 If you're interested in how I did it, you can take a look at :link[My Pattern]{id="https://gist.github.com/WerWolv/b0b616853b03a86fb0214c2e4fbfcbdb"}. 
 
-If you have any questions about the process, ImHex or the Pattern Language itself, please reach out on the :link[ImHex Discord Server]{id="https://discord.gg/X63jZ36xBY"}, :link[Discord DMs @werwolv]{id="https://discord.com/users/181738643008782346"} or per [E-Mail `hey@werwolv.net`](mailto:hey@werwolv.net).
+If you have any questions about the process, ImHex or the Pattern Language itself, please reach out on the :link[ImHex Discord Server]{id="https://discord.gg/X63jZ36xBY"}, via :link[Discord DMs @werwolv]{id="https://discord.com/users/181738643008782346"} or by [email at `hey@werwolv.net`](mailto:hey@werwolv.net).
