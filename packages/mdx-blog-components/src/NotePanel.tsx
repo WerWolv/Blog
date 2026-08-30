@@ -101,7 +101,7 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
 
   const scopeId = `note-panel-${type}${id ? `-${id}` : ''}`
   return (
-    <div id={scopeId} style={{ position: 'relative' }}>
+    <div id={scopeId} style={{ position: 'relative', margin: '2em' }}>
       <style>{`
         #${scopeId} {
           --bg-color: ${config.backgroundColor.light};
