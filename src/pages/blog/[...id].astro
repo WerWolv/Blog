@@ -20,8 +20,8 @@ export async function getStaticPaths() {
     props: {
       post,
       posts: sortedPosts,
-      prev: index + 1 < sortedPosts.length ? sortedPosts[index + 1] : null,
-      next: index > 0 ? sortedPosts[index - 1] : null,
+      prev: sortedPosts.slice(index + 1).find((post) => !post.data.hidden) ?? null,
+      next: sortedPosts.slice(0, index).findLast((post) => !post.data.hidden) ?? null,
     },
   }))
 }
@@ -64,7 +64,7 @@ const PostLayout = layoutMap[layoutKey]
       }
     </PostLayout>
     {
-      posts.length > 1 && (
+      (prev || next) && (
         <div class="px-6 sm:px-8 pb-6 sm:pb-8">
           <PostNavigation {prev} {next} />
         </div>
