@@ -44,6 +44,12 @@
           "include": "#attributes"
         },
         {
+          "include": "#template-type-usage"
+        },
+        {
+          "include": "#template-variable-definition"
+        },
+        {
           "include": "#variable-definition"
         },
         {
@@ -77,6 +83,9 @@
           "include": "#try-catch-statement"
         },
         {
+          "include": "#keywords"
+        },
+        {
           "include": "#operators"
         },
         {
@@ -97,7 +106,7 @@
       "name": "meta.namespace.pl",
       "beginCaptures": {
         "1": {
-          "name": "keyword.control.namespace.pl"
+          "name": "keyword.control.pl"
         },
         "3": {
           "name": "storage.type.builtin.pl"
@@ -131,6 +140,47 @@
         },
         "5": {
           "name": "storage.type.builtin.pl"
+        }
+      }
+    },
+    "template-type-usage": {
+      "begin": "\\b([A-Za-z_][A-Za-z0-9_:]*)(<)",
+      "end": "(>)",
+      "name": "meta.type.template.pl",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.pl"
+        },
+        "2": {
+          "name": "punctuation.definition.typeparameters.begin.pl"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.typeparameters.end.pl"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#template-type-usage"
+        },
+        {
+          "include": "#type-usage"
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.comma.pl"
+        }
+      ]
+    },
+    "template-variable-definition": {
+      "match": "(?<=>)\\s+([A-Za-z_][A-Za-z0-9_]*)(\\s+(in|out))?",
+      "captures": {
+        "1": {
+          "name": "variable.other.definition.pl"
+        },
+        "3": {
+          "name": "keyword.other.inout.pl"
         }
       }
     },
@@ -255,19 +305,19 @@
       "match": "\\s*(import)\\s*([a-zA-Z0-9_\\.]+|\\*)\\s*((from)\\s*([a-zA-Z0-9_\\.]+))?\\s*((as)?\\s*([a-zA-Z0-9_\\.]+))",
       "captures": {
         "1": {
-          "name": "keyword.control.import.pl"
+          "name": "keyword.control.pl"
         },
         "2": {
           "name": "variable.other.import.pl"
         },
         "4": {
-          "name": "keyword.control.from.pl"
+          "name": "keyword.control.pl"
         },
         "5": {
           "name": "variable.other.import.pl"
         },
         "7": {
-          "name": "keyword.control.as.pl"
+          "name": "keyword.control.pl"
         },
         "8": {
           "name": "variable.other.import.pl"
@@ -289,7 +339,7 @@
       "match": "\\b(using)\\s+([a-zA-Z0-9_]+)\\s*((=)\\s*([a-zA-Z0-9_]+))?",
       "captures": {
         "1": {
-          "name": "keyword.control.using.pl"
+          "name": "keyword.control.pl"
         },
         "2": {
           "name": "variable.other.using.pl"
@@ -304,17 +354,20 @@
       }
     },
     "struct-definition": {
-      "begin": "(struct|union|bitfield)\\s+([a-zA-Z0-9_]+)(\\s*<([^\\>]*)>)?\\s*((\\:)\\s*([a-zA-Z0-9_]+))?\\s*(\\{)",
+      "begin": "(struct|union|bitfield)\\s+([a-zA-Z0-9_]+)(\\s*(<)([^\\>]*)(>))?\\s*((\\:)\\s*([a-zA-Z0-9_]+))?\\s*(\\{)",
       "end": "(\\})\\s*",
       "contentName": "meta.struct.pl",
       "beginCaptures": {
         "1": {
-          "name": "keyword.control.struct.pl"
+          "name": "storage.type.pl"
         },
         "2": {
           "name": "entity.name.type.struct.pl"
         },
         "4": {
+          "name": "punctuation.definition.typeparameters.begin.pl"
+        },
+        "5": {
           "patterns": [
             {
               "include": "#type-usage"
@@ -324,10 +377,13 @@
             }
           ]
         },
-        "7": {
+        "6": {
+          "name": "punctuation.definition.typeparameters.end.pl"
+        },
+        "9": {
           "name": "entity.name.type.base.pl"
         },
-        "8": {
+        "10": {
           "name": "punctuation.bracket.curly.open.pl"
         }
       },
@@ -348,13 +404,13 @@
       "contentName": "meta.enum.pl",
       "beginCaptures": {
         "1": {
-          "name": "keyword.control.enum.pl"
+          "name": "storage.type.pl"
         },
         "2": {
-          "name": "entity.name.type.enum.pl"
+          "name": "entity.name.type.struct.pl"
         },
         "5": {
-          "name": "entity.name.type.base.pl"
+          "name": "entity.name.type.struct.pl"
         },
         "6": {
           "name": "punctuation.bracket.curly.open.pl"
@@ -367,6 +423,12 @@
       },
       "patterns": [
         {
+          "include": "#comment"
+        },
+        {
+          "include": "#line-comment"
+        },
+        {
           "include": "#enum-member"
         }
       ]
@@ -375,7 +437,7 @@
       "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*((=)\\s*([a-zA-Z0-9_]+)(\\s*\\.\\.\\.\\s*([a-zA-Z0-9_]+))?)?(,)?",
       "captures": {
         "1": {
-          "name": "variable.other.enum-member.pl"
+          "name": "entity.name.type.struct.pl"
         },
         "3": {
           "name": "keyword.operator.assignment.pl"
@@ -402,6 +464,10 @@
     "operators": {
       "patterns": [
         {
+          "match": "<<=|>>=|\\+=|-=|\\*=|/=|%=|&=|\\^=|\\|=|=(?!=)",
+          "name": "keyword.operator.assignment.pl"
+        },
+        {
           "match": "\\+",
           "name": "keyword.operator.arithmetic.addition.pl"
         },
@@ -420,6 +486,10 @@
         {
           "match": "%",
           "name": "keyword.operator.arithmetic.modulus.pl"
+        },
+        {
+          "match": "<<|>>",
+          "name": "keyword.operator.bitwise.shift.pl"
         },
         {
           "match": "<=|>=|<|>|==|!=|&&|\\|\\||!",
@@ -462,16 +532,16 @@
           "name": "keyword.operator.ternary.question.pl"
         },
         {
+          "match": "::",
+          "name": "punctuation.accessor.double-colon.pl"
+        },
+        {
           "match": ":",
           "name": "keyword.operator.ternary.colon.pl"
         },
         {
           "match": "sizeof|addressof|typenameof",
           "name": "keyword.operator.function.pl"
-        },
-        {
-          "match": "\\+=|-=|\\*=|/=|%=|&=|\\^=|\\|=",
-          "name": "keyword.operator.assignment.pl"
         }
       ]
     },
@@ -503,25 +573,47 @@
         }
       ]
     },
+    "parenthesized-expression": {
+      "begin": "(\\()",
+      "end": "(\\))",
+      "name": "meta.group.pl",
+      "beginCaptures": {
+        "1": { "name": "punctuation.bracket.round.open.pl" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.bracket.round.close.pl" }
+      },
+      "patterns": [
+        { "include": "#parenthesized-expression" },
+        { "include": "#literal" },
+        { "include": "#identifier" },
+        { "include": "#operators" }
+      ]
+    },
     "if-statement": {
       "begin": "\\b(if)\\s*(\\()",
       "end": "(\\))",
       "name": "meta.if.pl",
       "beginCaptures": {
-        "1": { "name": "keyword.control.if.pl" },
+        "1": { "name": "keyword.control.pl" },
         "2": { "name": "punctuation.bracket.round.open.pl" }
       },
       "endCaptures": {
         "1": { "name": "punctuation.bracket.round.close.pl" },
         "2": { "name": "punctuation.bracket.curly.open.pl" }
       },
-      "patterns": [{ "include": "#literal" }, { "include": "#identifier" }, { "include": "#operators" }]
+      "patterns": [
+        { "include": "#parenthesized-expression" },
+        { "include": "#literal" },
+        { "include": "#identifier" },
+        { "include": "#operators" }
+      ]
     },
     "else-statement": {
       "match": "\\b(else)\\b",
-      "name": "keyword.control.else.pl",
+      "name": "keyword.control.pl",
       "captures": {
-        "1": { "name": "keyword.control.else.pl" }
+        "1": { "name": "keyword.control.pl" }
       }
     },
     "for-statement": {
@@ -529,52 +621,68 @@
       "end": "(\\))",
       "name": "meta.for.pl",
       "beginCaptures": {
-        "1": { "name": "keyword.control.for.pl" },
+        "1": { "name": "keyword.control.pl" },
         "2": { "name": "punctuation.bracket.round.open.pl" }
       },
       "endCaptures": {
         "1": { "name": "punctuation.bracket.round.close.pl" },
         "2": { "name": "punctuation.bracket.curly.open.pl" }
       },
-      "patterns": [{ "include": "#type-usage" }, { "include": "#literal" }, { "include": "#identifier" }, { "include": "#operators" }]
+      "patterns": [
+        { "include": "#variable-definition" },
+        { "include": "#parenthesized-expression" },
+        { "include": "#literal" },
+        { "include": "#identifier" },
+        { "include": "#operators" }
+      ]
     },
     "while-statement": {
       "begin": "\\b(while)\\s*(\\()",
       "end": "(\\))",
       "name": "meta.while.pl",
       "beginCaptures": {
-        "1": { "name": "keyword.control.while.pl" },
+        "1": { "name": "keyword.control.pl" },
         "2": { "name": "punctuation.bracket.round.open.pl" }
       },
       "endCaptures": {
         "1": { "name": "punctuation.bracket.round.close.pl" },
         "2": { "name": "punctuation.bracket.curly.open.pl" }
       },
-      "patterns": [{ "include": "#type-usage" }, { "include": "#literal" }, { "include": "#identifier" }, { "include": "#operators" }]
+      "patterns": [
+        { "include": "#parenthesized-expression" },
+        { "include": "#literal" },
+        { "include": "#identifier" },
+        { "include": "#operators" }
+      ]
     },
     "match-statement": {
       "begin": "\\b(match)\\s*(\\()",
       "end": "(\\))",
       "name": "meta.match.pl",
       "beginCaptures": {
-        "1": { "name": "keyword.control.match.pl" },
+        "1": { "name": "keyword.control.pl" },
         "2": { "name": "punctuation.bracket.round.open.pl" }
       },
       "endCaptures": {
         "1": { "name": "punctuation.bracket.round.close.pl" },
         "2": { "name": "punctuation.bracket.curly.open.pl" }
       },
-      "patterns": [{ "include": "#type-usage" }, { "include": "#literal" }, { "include": "#identifier" }, { "include": "#operators" }]
+      "patterns": [
+        { "include": "#parenthesized-expression" },
+        { "include": "#literal" },
+        { "include": "#identifier" },
+        { "include": "#operators" }
+      ]
     },
     "try-catch-statement": {
       "match": "\\b((try)|(catch))\\b",
-      "name": "keyword.control.try-catch.pl",
+      "name": "keyword.control.pl",
       "captures": {
         "2": {
-          "name": "keyword.control.try.pl"
+          "name": "keyword.control.pl"
         },
         "3": {
-          "name": "keyword.control.catch.pl"
+          "name": "keyword.control.pl"
         }
       }
     },
@@ -584,7 +692,7 @@
       "name": "meta.function.definition.pl",
       "beginCaptures": {
         "1": {
-          "name": "keyword.control.function.pl"
+          "name": "storage.type.pl"
         },
         "2": {
           "name": "entity.name.function.pl"

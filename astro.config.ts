@@ -8,12 +8,12 @@ import robotsTxt from 'astro-robots-txt'
 import expressiveCode from 'astro-expressive-code'
 import { remarkPlugins, rehypePlugins } from './plugins'
 import { SITE } from './src/config'
-import fs from 'fs'
 import mermaid from 'astro-mermaid'
+import type { LanguageInput } from 'shiki'
 
-function syntaxHighlighting(name: string): any {
-  return JSON.parse(fs.readFileSync(`./src/syntax/${name}.tmLanguage.json`, 'utf-8'))
-}
+const syntaxDefinitions = Object.values(
+  import.meta.glob<LanguageInput>('./src/syntax/*.tmLanguage.json', { eager: true, import: 'default' })
+)
 
 export default defineConfig({
   site: SITE.website,
@@ -44,7 +44,7 @@ export default defineConfig({
   integrations: [
     expressiveCode({
       shiki: {
-        langs: [syntaxHighlighting('pl'), syntaxHighlighting('dts'), syntaxHighlighting('gen_init_cpio'), syntaxHighlighting('command')],
+        langs: syntaxDefinitions,
       },
     }),
     mdx(),
