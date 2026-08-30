@@ -39,7 +39,7 @@ The first thing we need is the save file. I downloaded the game from Steam (the 
 
 Opening the file in ImHex shows this:
 
-```txt title="SaveSlot2" 
+```txt wrap=false title="SaveSlot2"
 Hex View  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
  
 00000000  3E 74 E1 41 6B BA DA 01  06 00 00 00 00 00 00 00  >t.Ak...........
@@ -123,9 +123,14 @@ This instantiates the `FezSaveFile` pattern object at address `0x00` of our file
 
 Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a little endian, 64-bit value (a `long` in C#) that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything, but it's not really all that interesting, so we can simply place a `s64` in its place in the Pattern to read it.
 
+We can also write type aliases with the `using` keyword to make the code in our pattern resemble the types used in the real code even more closely.
+
 ```pl title="fez.hexpat"
+using int  = s32;
+using long = s64;
+
 struct FezSaveFile {
-  s64 fileTime;
+  long fileTime;
 };
 ```
 
@@ -177,11 +182,11 @@ Looking at the types of those values allows them to be easily converted to the I
 ```pl title="fez.hexpat"
 struct FezSaveFile {
   // From PCSaveDevice.cs
-  s64 fileTime;
+  long fileTime;
 
   // From SaveFileOperations.cs
-  s64 someStaticValue; // Could be a save file version number?
-  s64 creationTime;
+  long someStaticValue; // Could be a save file version number?
+  long creationTime;
   bool finished32;
   bool finished64;
   bool hasFpView;
@@ -338,12 +343,12 @@ foreach (KeyValuePair<string, bool> oneTimeTutorial in sd.OneTimeTutorials)
 }
 ```
 
-Back to the code from before, we can define a few more types now to finally parse this construct. This time using a `s32` because `Count` is a `int` in C#.
+Back to the code from before, we can define a few more types now to finally parse this construct. This time using a `s32` (or our `int` type alias) because `Count` is a `int` in C#.
 
 ```pl title="fez.hexpat"
 struct List<T> {
   // Read the number of items 
-  s32 count;
+  int count;
 
   // Place an array of `count` items down
   T items[count];
@@ -397,7 +402,7 @@ public enum ActorType
 ```
 
 ```pl title="fez.hexpat"
-enum ActorType : s32
+enum ActorType : int
 {
   None,
   Ladder,
@@ -408,7 +413,7 @@ enum ActorType : s32
 };
 ```
 
-This type can then simply be used in place of a `s32` and gives us a nicer display:
+This type can then simply be used in place of a `int` and gives us a nicer display:
 
 <Figure src={import("assets/artifacts.png")} alt="ActorType enum as seen in ImHex"/>
 

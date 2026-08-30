@@ -1,6 +1,9 @@
 import std.core;
 import std.io;
 
+using int = s32;
+using long = s64;
+
 struct SevenBitEncodedIntByte {
     u8 byte;
     if ((byte & 0x80) == 0x00)
@@ -18,7 +21,8 @@ fn transformSevenBitEncodedInt(ref auto encodedInt) {
     result |= (encodedInt.bytes[i].byte & 0x7F) << (i * 7);
   }
   
-  retu
+  return result;
+};
 
 struct String {
     SevenBitEncodedInt size;
@@ -48,7 +52,7 @@ struct KeyValuePair<Key, Value> {
     Value value;
 } [[name(std::format("[{}]", this.key))]];
 
-enum Viewpoint : s32 {
+enum Viewpoint : int {
     None,
     Front,
     Right,
@@ -64,11 +68,11 @@ struct Vector3 {
 };
 
 struct List<T> {
-    s32 count;
+    int count;
     T items[count];
 };
 
-enum ActorType : s32 {
+enum ActorType : int {
   None,
   Ladder,
   Bouncer,
@@ -159,29 +163,29 @@ enum ActorType : s32 {
 };
 
 struct TrileEmplacement {
-    s32 x, y, z;
+    int x, y, z;
 };
 
 struct WinConditions {
-    s32 lockedDoorCount;
-    s32 unlockedDoorCount;
-    s32 chestCount;
-    s32 cubeShardCount;
-    s32 otherCollectibleCount;
-    s32 splitUpCount;
-    List<s32> scriptIds;
-    s32 secretCount;
+    int lockedDoorCount;
+    int unlockedDoorCount;
+    int chestCount;
+    int cubeShardCount;
+    int otherCollectibleCount;
+    int splitUpCount;
+    List<int> scriptIds;
+    int secretCount;
 };
 
 struct LevelSaveData {
     List<TrileEmplacement> destroyedTriles;
     List<TrileEmplacement> inactiveTriles;
-    List<s32> inactiveArtObjects;
-    List<s32> inactiveEvents;
-    List<s32> InactiveGroups;
-    List<s32> inactiveVolumes;
-    List<s32> inactiveNPCs;
-    List<KeyValuePair<s32, s32>> pivotRotations;
+    List<int> inactiveArtObjects;
+    List<int> inactiveEvents;
+    List<int> InactiveGroups;
+    List<int> inactiveVolumes;
+    List<int> inactiveNPCs;
+    List<KeyValuePair<int, int>> pivotRotations;
     Object<float> lastStableLiquidHeight;
     Object<String> scriptingState;
     bool firstVsisit;
@@ -189,10 +193,10 @@ struct LevelSaveData {
 };
 
 struct FezSaveFile {
-    s64 fileTime;
+    long fileTime;
 
-    s64 versionMaybe;
-    s64 creationTime;
+    long versionMaybe;
+    long creationTime;
     bool finished32;
     bool finished64;
     bool hasFpView;
@@ -203,14 +207,14 @@ struct FezSaveFile {
     Object<String> level;
     Viewpoint view;
     Vector3 ground;
-    s64 timeOfDay;
+    long timeOfDay;
     List<Object<String>> unlockedWarpDestinations;
-    s32 keys;
-    s32 cubeShards;
-    s32 secretCubes;
-    s32 collectedParts;
-    s32 collectedOwls;
-    s32 piecesOfHeart;
+    int keys;
+    int cubeShards;
+    int secretCubes;
+    int collectedParts;
+    int collectedOwls;
+    int piecesOfHeart;
     List<Object<String>> maps;
     List<ActorType> artifacts;
     List<Object<String>> earnedAchievements;
@@ -226,7 +230,7 @@ struct FezSaveFile {
     List<KeyValuePair<Object<String>, LevelSaveData>> worlds;
     bool scoreDirty;
     bool hasDoneHeartReboot;
-    s64 playTime;
+    long playTime;
     bool isNew;
 } [[fixed_size(0xA000)]];
 
