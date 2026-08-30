@@ -24,11 +24,16 @@ Over the years I've been asked the same question countless times:
 
 I usually couldn't really give them a good answer except, "Look at the decompiled code of whatever program reads/writes these files and work backwards from there." This post is meant to change that. We'll go from a completely custom binary save file for the game :link[FEZ]{id="https://fezgame.com/"} to a full definition written in the Pattern Language, which is part of :link[ImHex]{id="https://imhex.werwolv.net"}, the hex editor I've been developing for the past few years. It is free, open source and available on any operating system (or even through the browser if you prefer that: :link[ImHex Web]{id="https://web.imhex.werwolv.net/nightly"}).
 
-<NotePanel type="alert" title="Spoiler Warning">
-FEZ was released all the way back in 2012. Still, if you haven't played it yet and want to get the full experience, I highly recommend playing it before you continue reading. Some of the code shown here will contain heavy spoilers for secrets and endgame content that might ruin your experience. You have been warned.
+<NotePanel type="note" title="ImHex Version">
+At the time of writing, some features used here are not in a release yet but only available in the Nightly build (that can also be downloaded above from the same link). 
+If you're on ImHex v1.38.1 or below and experiencing issues, consider upgrading to the Nightly build
 </NotePanel>
 
 ## Getting Started
+
+<NotePanel type="alert" title="Spoiler Warning">
+FEZ was released all the way back in 2012. Still, if you haven't played it yet and want to get the full experience, I highly recommend playing it before you continue reading. Some of the code shown here will contain heavy spoilers for secrets and endgame content that might ruin your experience. You have been warned.
+</NotePanel>
 
 The first thing we need is the save file. I downloaded the game from Steam (the latest full release currently available, released 2. December 2016), started it and played for a little bit until it saved. Then I went looking through my filesystem and found the save file under `/home/werwolv/.local/share/FEZ/SaveSlot2`. On Windows, it will be elsewhere.
 
