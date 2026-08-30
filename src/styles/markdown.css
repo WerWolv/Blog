@@ -787,9 +787,8 @@ image-figure-polaroid {
   white-space: normal;
 }
 
-/* If links appear in code blocks or inline code */
-.markdown pre,
-.markdown code {
+/* Preserve wrapping for plain Markdown code without overriding Expressive Code. */
+.markdown :where(pre, code):not(.expressive-code *) {
   white-space: pre-wrap;
   word-break: break-word;
 }
