@@ -30,8 +30,8 @@ export default defineConfig({
     assetsInclude: ['**/*.pdf'],
     resolve: {
       alias: {
-        '@/': fileURLToPath(new URL('./packages/custom-components/src/', import.meta.url)),
-        'mdx-blog-components': fileURLToPath(new URL('./packages/custom-components/src', import.meta.url)),
+        '@': fileURLToPath(new URL('./packages/mdx-blog-components/src', import.meta.url)),
+        'mdx-blog-components': fileURLToPath(new URL('./packages/mdx-blog-components/src', import.meta.url)),
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.astro', '.mdx'],
     },
