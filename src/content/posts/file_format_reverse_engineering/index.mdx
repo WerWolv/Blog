@@ -121,9 +121,9 @@ FezSaveFile saveFile @ 0x00;
 
 This instantiates the `FezSaveFile` pattern object at address `0x00` of our file.
 
-Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a little endian, 64-bit value (a `long` in C#) that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything, but it's not really all that interesting, so we can simply place a `s64` in its place in the Pattern to read it.
+Next, in the save file generation code, we see `writer.Write(DateTime.Now.ToFileTime());`, which writes the current timestamp as a :link[Windows File Time]{id="https://learn.microsoft.com/en-us/dotnet/api/system.datetime.tofiletime?view=net-10.0#remarks"} to the output. As seen in the Remarks section of the docs, this is simply a little endian, 64-bit value (a `long` in C#) that represents the number of 100 ns intervals that have passed since the year of our lord 1601 A.D. We could, of course, properly decode this value and everything but to get started we can simply place a `s64` in its place in the Pattern to read it.
 
-We can also write type aliases with the `using` keyword to make the code in our pattern resemble the types used in the real code even more closely.
+Alternatively, we can also write type aliases with the `using` keyword to make the code in our pattern resemble the types used in the real code even more closely. These simply define a new type that has the exact properties of the type on the right hand side but with a potentially more descriptive name. 
 
 ```pl title="fez.hexpat"
 using int  = s32;
@@ -132,11 +132,29 @@ using long = s64;
 struct FezSaveFile {
   long fileTime;
 };
+
+FezSaveFile saveFile @ 0x00;
 ```
 
 After clicking the <span class="icon-[lucide--play]" /> button at the bottom of the Pattern Editor (or pressing the `F5` key), the region of that value is now highlighted in the Hex Editor View, and it also appears in the pattern tree in the Pattern Data View.
 
 <Figure src={import("assets/hex_editor_and_pattern_data.png")} alt="Highlighted Bytes in the Hex Editor and decoded value in the Pattern Data View"/>
+
+For this particular case though, we're in luck and the standard library already implements a type for decoding a Windows `FILETIME` value. To get access to it, we can `import` the `type.time` library which defines that type and then use it like any other type in our code:
+
+```pl
+import type.time;
+
+struct FezSaveFile {
+  type::FILETIME fileTime;
+};
+
+FezSaveFile saveFile @ 0x00;
+```
+
+This simple change now turns that unreadable number from before into a nice, human readable representation of the actual time value:
+
+<Figure src={import("assets/import_filetime.png")} alt="Decoding the FILETIME value using the `type::FILETIME` type from the standard library"/>
 
 <NotePanel type="hint" title="[[fixed_size]] attribute">
 One thing we can also see is that the code ensures that the save file is always `0xA000` bytes long. If it's shorter, it will pad it out, and if it is longer, an `InvalidOperationException` will be thrown. This maps incredibly well to the `[[fixed_size(0xA000)]]` attribute that can be attached to `FezSaveFile` to ensure that. This is entirely optional but helps document the official behavior.
@@ -402,7 +420,8 @@ public enum ActorType
 ```
 
 ```pl title="fez.hexpat"
-enum ActorType : int {
+enum ActorType : int
+{
   None,
   Ladder,
   Bouncer,
