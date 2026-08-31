@@ -156,8 +156,12 @@ This simple change now turns that unreadable number from before into a nice, hum
 
 <Figure src={import("assets/import_filetime.png")} alt="Decoding the FILETIME value using the `type::FILETIME` type from the standard library"/>
 
+And that's it for the start, congrats! You wrote your first pattern!
+
 <NotePanel type="hint" title="[[fixed_size]] attribute">
-One thing we can also see is that the code ensures that the save file is always `0xA000` bytes long. If it's shorter, it will pad it out, and if it is longer, an `InvalidOperationException` will be thrown. This maps incredibly well to the `[[fixed_size(0xA000)]]` attribute that can be attached to `FezSaveFile` to ensure that. This is entirely optional but helps document the official behavior.
+One thing we can also see in the code is that the `Save()` function ensures that the save file is always `0xA000` bytes long. If it's shorter, it will pad it out with zeros, and if it is longer, an `InvalidOperationException` will be thrown. 
+
+This maps incredibly well to the `[[fixed_size(0xA000)]]` attribute that can be attached to `FezSaveFile` to ensure that. This is entirely optional but helps document the official behavior.
 </NotePanel>
 
 ### The Actual Save Data
@@ -203,7 +207,7 @@ struct FezSaveFile {
   long fileTime;
 
   // From SaveFileOperations.cs
-  long someStaticValue; // Could be a save file version number?
+  long version; // Checked in the `Read()` function to be 6
   long creationTime;
   bool finished32;
   bool finished64;
@@ -212,6 +216,20 @@ struct FezSaveFile {
   bool canNewGamePlus;
   bool isNewGamePlus;
 };
+```
+
+If we want to be extra fancy and make sure that we only load files that are actually compatible with our pattern, we can easily assert on this. In the Pattern Language, we can have conditions and function calls intertwined with our type definitions which makes things like this possible:
+
+```pl title="fez.hexpat"
+import std.sys;
+
+struct FezSaveFile {
+  // From PCSaveDevice.cs
+  long fileTime;
+
+  // From SaveFileOperations.cs
+  long version; // Checked in the `Read()` function to be 6
+  std::assert(version == 6, "Unsupported Save File Version. Only Version 6 is supported");
 ```
 
 ### Objects and Strings
