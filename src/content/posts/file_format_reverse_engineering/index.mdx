@@ -204,7 +204,7 @@ Looking at the types of those values allows them to be easily converted to the I
 ```pl title="fez.hexpat"
 struct FezSaveFile {
   // From PCSaveDevice.cs
-  long fileTime;
+  type::FILETIME fileTime;
 
   // From SaveFileOperations.cs
   long version; // Checked in the `Read()` function to be 6
@@ -225,7 +225,7 @@ import std.sys;
 
 struct FezSaveFile {
   // From PCSaveDevice.cs
-  long fileTime;
+  type::FILETIME fileTime;
 
   // From SaveFileOperations.cs
   long version; // Checked in the `Read()` function to be 6
