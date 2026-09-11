@@ -71,7 +71,7 @@ struct Hardware {
     // the bootloader would do it on a real system
     emulator.cores()[0].a1() = DeviceTreeBlobLoadAddress;
 
-    // Load the Device Tree in front of the device tree
+    // Load the initramfs in front of the device tree
     // but at a fixed address we can use later
     constexpr static auto InitRamFsLoadAddress = 0x1F700000;
     ram.write(InitRamFsLoadAddress, InitRamFs);
