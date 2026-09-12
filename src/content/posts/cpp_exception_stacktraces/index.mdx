@@ -37,8 +37,8 @@ public:
     m_what = std::format(
       "what(): {}\n{}", 
       what,
-      // Capture the stack trace
-      // skipping the current frame which is the constructor itself
+      // Capture the stack trace,
+      //   skipping the current frame which is the constructor itself
       std::stacktrace::current(1)
     );
   }
@@ -161,16 +161,18 @@ extern "C" auto __wrap___cxa_throw(
   // Called when an exception is thrown, at the call site of the `throw`
 
   // std::uncaught_exceptions() returns the number of currently
-  //   active exceptions that have been thrown but not yet caught
-  auto exception_count = std::uncaught_exceptions();
+  //   active exceptions that have been thrown but not yet caught.
+  //   Since the real __cxa_throw hasn't been called yet, this gives
+  //   us the index we want to store the exception at in the global object
+  auto exception_index = std::uncaught_exceptions();
 
   // If there's still some space on the exception stack,
   //   capture a new stacktrace and add it to the stack
-  if (exception_count < ssize_t(s_stacktraces.size())) {
+  if (exception_index < ssize_t(s_stacktraces.size())) {
     // Add the current stack trace to the end of the
     //   stack trace storage array skipping the current
     //   frame which is the __wrap___cxa_throw function itself
-    s_stacktraces[exception_count] = std::stacktrace::current(1);
+    s_stacktraces[exception_index] = std::stacktrace::current(1);
   }
 
   // Forward to original __cxa_throw()
@@ -180,16 +182,18 @@ extern "C" auto __wrap___cxa_throw(
 // Simple helper function to print the stack trace
 //   of the exception that's currently being caught
 auto print_stacktrace() -> void {
-  auto exception_count = std::uncaught_exceptions();
-  if (exception_count < 0) {
-    std::println("No active exception");
-    return;
-  } else if (exception_count >= s_stacktraces.size()) {
+  // This function returns the number of exceptions currently in-flight.
+  //   Since we're calling it from a catch-handler, that exception was already
+  //   caught so it returns the number of exceptions in flight - 1.
+  //   This conveniently is the index into the s_stacktraces array
+  auto last_exception_index = std::uncaught_exceptions();
+  
+  if (last_exception_index >= s_stacktraces.size()) {
     std::println("Too many active exceptions");
     return;
   }
 
-  std::print("Stacktrace:\n{}", s_stacktraces[exception_count]);
+  std::print("Stacktrace:\n{}", s_stacktraces[last_exception_index]);
 }
 ```
 

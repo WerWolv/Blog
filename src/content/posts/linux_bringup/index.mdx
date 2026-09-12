@@ -159,6 +159,12 @@ $ make -j    \
 ```
 If the make process asks questions if you want to enable or disable any other options, you can simply answer `n` to all of them.
 
+<NotePanel type="hint" title="Minimal Config">
+The config we have now still leaves quite a lot of things enabled that are useless to us. Think, the entire Audio and Video backend, USB, tons of other drivers we don't emulate the hardware for and so on.
+I did this to keep the process described here as close to what you'd do to get a real system up and running.
+If you truly want a minimal config, you can try using `ARCH=riscv make tinyconfig` which should produce the absolute minimal configuration for this architecture. Afterwards you can still use `ARCH=riscv make menuconfig` to enable some things you do care about again. 
+</NotePanel>
+
 After the compilation is done, you should have a `arch/riscv/boot/Image` file that contains the compiled Kernel. This is the final file that can be executed.
 
 ## Compiling a `init` program

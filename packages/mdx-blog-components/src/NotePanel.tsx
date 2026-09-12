@@ -144,6 +144,7 @@ export default function NotePanel({ title, type, children, id }: NotePanelProps)
           clipPath: `path(evenodd, "M -10,-10 H 2000 V 2000 H 0 Z M 0,0 m ${CircleRadius + 3},0 a ${CircleRadius + 3},${CircleRadius + 3} 0 1,0 -${(CircleRadius + 3) * 2},0 a ${CircleRadius + 3},${CircleRadius + 3} 0 1,0 ${(CircleRadius + 3) * 2},0")`,
           borderLeft: 'solid var(--border-color)',
           borderWidth: '3px',
+          fontSize: '0.9em',
         }}
       >
         <h4>{title}</h4>
