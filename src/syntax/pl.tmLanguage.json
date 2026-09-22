@@ -162,6 +162,12 @@
       },
       "patterns": [
         {
+          "include": "#comment"
+        },
+        {
+          "include": "#line-comment"
+        },
+        {
           "include": "#template-type-usage"
         },
         {
