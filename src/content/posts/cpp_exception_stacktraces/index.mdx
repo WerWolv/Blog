@@ -128,9 +128,8 @@ To hook `__cxa_throw`, we can make use of the Linker to redirect all calls made 
 The linker will then replace all calls to `__cxa_throw` with calls to `__wrap___cxa_throw` and it will rename the original `__cxa_throw` function to `__real___cxa_throw`. 
 
 <NotePanel type="hint" title="Function names">
-    Note the triple-underscore here, the linker appends `__wrap_` and `__real_` to the function name and `__cxa_throw` already starts with two underscores...
+    Note the triple-underscore here, the linker prepends `__wrap_` and `__real_` to the function name and `__cxa_throw` already starts with two underscores...
 </NotePanel>
-<br/>
 We can now implement our own `__wrap___cxa_throw` function that captures the stack trace and then calls the original `__cxa_throw` function.
 
 ```cpp title="stacktrace.cpp"
