@@ -130,7 +130,7 @@
       ]
     },
     "type-usage": {
-      "match": "\\b(const|ref|be|le\\s+)?((u|s)(8|16|24|32|48|64|96|128)|(float|double|str|auto|bool|char|char16|unsigned|signed)|([A-Za-z_][A-Za-z0-9_]*))\\b",
+      "match": "\\b(const|ref|be|le\\s+)?((u|s)(8|16|24|32|48|64|96|128)|(float|double|str|auto|bool|char|char16|unsigned|signed)|([A-Za-z_][A-Za-z0-9_:]*))\\b",
       "captures": {
         "1": {
           "name": "keyword.other.ref.pl"
@@ -140,8 +140,31 @@
         },
         "5": {
           "name": "storage.type.builtin.pl"
+        },
+        "6": {
+          "patterns": [
+            {
+              "include": "#type-name"
+            }
+          ]
         }
       }
+    },
+    "type-name": {
+      "patterns": [
+        {
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=::)",
+          "name": "entity.name.namespace.pl"
+        },
+        {
+          "match": "::",
+          "name": "punctuation.accessor.double-colon.pl"
+        },
+        {
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+          "name": "entity.name.type.pl"
+        }
+      ]
     },
     "template-type-usage": {
       "begin": "\\b([A-Za-z_][A-Za-z0-9_:]*)(<)",
@@ -149,7 +172,11 @@
       "name": "meta.type.template.pl",
       "beginCaptures": {
         "1": {
-          "name": "storage.type.pl"
+          "patterns": [
+            {
+              "include": "#type-name"
+            }
+          ]
         },
         "2": {
           "name": "punctuation.definition.typeparameters.begin.pl"
@@ -191,7 +218,7 @@
       }
     },
     "variable-definition": {
-      "match": "\\s*(ref\\s+)?((?!else)\\b[a-zA-Z_][a-zA-Z0-9_]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)(\\s+(in|out))?",
+      "match": "\\s*(ref\\s+)?((?!else)\\b[a-zA-Z_][a-zA-Z0-9_:]*)\\s+([a-zA-Z_][a-zA-Z0-9_]*)(\\s+(in|out))?",
       "captures": {
         "1": {
           "patterns": [
@@ -295,8 +322,43 @@
       ]
     },
     "identifier": {
-      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
-      "name": "variable.other.identifier.pl"
+      "patterns": [
+        {
+          "include": "#function-call"
+        },
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b",
+          "name": "variable.other.identifier.pl"
+        }
+      ]
+    },
+    "function-call": {
+      "patterns": [
+        {
+          "match": "\\b((?:[a-zA-Z_][a-zA-Z0-9_]*::)+)([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "match": "[a-zA-Z_][a-zA-Z0-9_]*",
+                  "name": "entity.name.namespace.pl"
+                },
+                {
+                  "match": "::",
+                  "name": "punctuation.accessor.double-colon.pl"
+                }
+              ]
+            },
+            "2": {
+              "name": "entity.name.function.call.pl"
+            }
+          }
+        },
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\\s*\\()",
+          "name": "entity.name.function.call.pl"
+        }
+      ]
     },
     "comment": {
       "begin": "\\/\\*",
@@ -342,13 +404,13 @@
       }
     },
     "using-declaration": {
-      "match": "\\b(using)\\s+([a-zA-Z0-9_]+)\\s*((=)\\s*([a-zA-Z0-9_]+))?",
+      "match": "\\b(using)\\s+([a-zA-Z0-9_]+)\\s*((=)\\s*([a-zA-Z_][a-zA-Z0-9_:]*))?",
       "captures": {
         "1": {
           "name": "keyword.control.pl"
         },
         "2": {
-          "name": "variable.other.using.pl"
+          "name": "entity.name.type.alias.pl"
         },
         "5": {
           "patterns": [
@@ -360,7 +422,7 @@
       }
     },
     "struct-definition": {
-      "begin": "(struct|union|bitfield)\\s+([a-zA-Z0-9_]+)(\\s*(<)([^\\>]*)(>))?\\s*((\\:)\\s*([a-zA-Z0-9_]+))?\\s*(\\{)",
+      "begin": "(struct|union|bitfield)\\s+([a-zA-Z0-9_]+)(\\s*(<)([^\\>]*)(>))?\\s*((\\:)\\s*([a-zA-Z_][a-zA-Z0-9_:]*))?\\s*(\\{)",
       "end": "(\\})\\s*",
       "contentName": "meta.struct.pl",
       "beginCaptures": {
@@ -387,7 +449,11 @@
           "name": "punctuation.definition.typeparameters.end.pl"
         },
         "9": {
-          "name": "entity.name.type.base.pl"
+          "patterns": [
+            {
+              "include": "#type-usage"
+            }
+          ]
         },
         "10": {
           "name": "punctuation.bracket.curly.open.pl"
@@ -405,7 +471,7 @@
       ]
     },
     "enum-definition": {
-      "begin": "(enum)\\s+([a-zA-Z0-9_]+)\\s*((\\:)\\s*([a-zA-Z0-9_]+))\\s*(\\{)",
+      "begin": "(enum)\\s+([a-zA-Z0-9_]+)\\s*((\\:)\\s*([a-zA-Z_][a-zA-Z0-9_:]*))\\s*(\\{)?",
       "end": "(\\})\\s*",
       "contentName": "meta.enum.pl",
       "beginCaptures": {
@@ -413,10 +479,14 @@
           "name": "storage.type.pl"
         },
         "2": {
-          "name": "entity.name.type.struct.pl"
+          "name": "entity.name.type.enum.pl"
         },
         "5": {
-          "name": "entity.name.type.struct.pl"
+          "patterns": [
+            {
+              "include": "#type-usage"
+            }
+          ]
         },
         "6": {
           "name": "punctuation.bracket.curly.open.pl"
@@ -428,6 +498,10 @@
         }
       },
       "patterns": [
+        {
+          "match": "\\{",
+          "name": "punctuation.bracket.curly.open.pl"
+        },
         {
           "include": "#comment"
         },
@@ -443,7 +517,7 @@
       "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*((=)\\s*([a-zA-Z0-9_]+)(\\s*\\.\\.\\.\\s*([a-zA-Z0-9_]+))?)?(,)?",
       "captures": {
         "1": {
-          "name": "entity.name.type.struct.pl"
+          "name": "entity.name.variable.enum-member.pl"
         },
         "3": {
           "name": "keyword.operator.assignment.pl"
