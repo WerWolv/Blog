@@ -330,8 +330,58 @@ This seemed to have been the last thing needed, since the game now gets all the 
 
 <Figure src={import("assets/start_menu.png")} alt="Start menu screen of the game"/>
 
+## Writing an auto patcher
+
+After I was done, I wrote a quick Python script that can apply the patches discussed in this post. This exact script will only work for the German version of the Game that I linked above. However, it shouldn't be hard to adapt to other versions as well (probably only requires fixing the hash and the offset)
+```py title="patch_findus4.py"
+#!/usr/bin/env python3
+
+import hashlib
+import sys
+from pathlib import Path
+
+
+game_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
+
+patches = [
+    (
+        game_dir / "Findus4.exe",
+        "b33312ff9086c1cbc09d9cde6baa0eff4220a1ed354c9a3211ff6787fff46e39",
+        0x2252E8,
+        bytes.fromhex("95 00 60"),
+        bytes.fromhex("95 00 03"),
+    ),
+    (
+        game_dir / "optgraph.dll",
+        "9897563fd6447976e2780ba0711f6e4e0a5a98a5c5cbecc4cb9bd608d856bd50",
+        0x1060,
+        bytes.fromhex("55 8B EC 81 EC F4"),
+        bytes.fromhex("B8 31 F1 8D 01 C3"),
+    ),
+]
+
+verified = []
+for path, expected_hash, offset, original, replacement in patches:
+    data = bytearray(path.read_bytes())
+    actual_hash = hashlib.sha256(data).hexdigest()
+    if actual_hash != expected_hash:
+        raise SystemExit(f"Unexpected SHA-256 for {path}: {actual_hash}")
+    if data[offset : offset + len(original)] != original:
+        raise SystemExit(f"Unexpected bytes at 0x{offset:X} in {path}")
+    data[offset : offset + len(replacement)] = replacement
+    verified.append((path, data))
+
+for path, data in verified:
+    path.chmod(path.stat().st_mode | 0o200)
+    path.write_bytes(data)
+    print(f"Patched {path}")
+
+```
+
 # Wrapping Up
 
 After spending the evening playing through that game again, I also looked through a few other, similar games that I used to play. It turns out that a surprisingly large number of them used Macromedia and had essentially the same basic copy-protection mechanism. Sadly, there's no easy way to make a common patch that works for all of these games, but with a little bit of effort, the same process can be applied to them as well.
 
-Being able to play these games again after over 20 years, and maybe even having my future kid play them, makes me really happy :) I hope this post can bring the same joy to others as well!
+Being able to play these games again after over 20 years, and maybe even having my future kid play them, makes me really happy :) 
+
+I really hope this post can bring the same joy to others as well!
