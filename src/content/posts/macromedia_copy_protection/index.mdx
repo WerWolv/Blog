@@ -1,7 +1,7 @@
 ---
-title: Bypassing the Copy Protection of old Macromedia games
+title: Bypassing the Copy Protection of Old Macromedia Games
 description: |
-    A journey of how I got many of my childhood games running on modern hardware again
+    How I got many of my childhood games running on modern hardware again
 cover: assets/cover.png
 author: WerWolv
 pubDate: 2026-10-08
@@ -9,28 +9,28 @@ tags: ['File Formats', 'Games', 'Windows']
 license: 'CC-BY-NC-SA-4.0'
 ---
 
-import NotePanel from '@/NotePanel';
+import NotePanel from '@/NotePanel'
 import Figure from '@/Figure'
 import TechnicalTerm from '@/TechnicalTerm'
 
 # Introduction
 
-When I was a kid in the early 2000s, I spent a lot of time playing games that I borrowed from our local library. Many of them were German Point-and-Click adventure games since those were the games that ran on my dad's Windows 95 computer. Even back then I was interested in tech always tried to figure out a way how I could keep playing these games after giving them back to the library but I, of course, never managed to do it. 
-A few days ago, I stumbled over one of those failed attempts again: a set of CDs that I tried to burn a copy of "Findus bei den Muklas" on and figured that maybe now is the time that I could finally do it.
+When I was a kid in the early 2000s, I spent a lot of time playing games that I borrowed from our local library. Many of them were German point-and-click adventure games, since those were the games that ran on my dad's Windows 95 computer. Even back then, I was interested in tech and always tried to figure out how I could keep playing these games after giving them back to the library, but I, of course, never managed to do it.
+A few days ago, I stumbled across one of those failed attempts again: a set of CDs onto which I tried to burn a copy of "Findus bei den Muklas." I figured that maybe now was the time where I finally have the skills to do it!
 
-# Getting a disk image
+# Getting a Disk Image
 
-Obviously, the CD I burned back then was unusable. Both because the CD burners at the time often weren't really able to properly read or write CDs with copy protection on them but also because I haven't had a computer with a disk drive in the past 10 years.
+Obviously, the CD I burned back then was unusable, both because CD burners at the time often weren't able to properly read or write copy-protected CDs and because I haven't had a computer with a disc drive in the past 10 years.
 
 <Figure src={import("assets/limited_by_the_technology_of_my_time.png")} alt="disappointment.png"/>
 
-Thankfully some helpful soul uploaded a set of full disk images for that and all the other games of that series to :link[archive.org]{id="https://archive.org/details/cd-01_202304"}). It's not piracy if it's on there, right?
+Thankfully, some helpful soul uploaded a set of full disk images for that and all the other games in the series to :link[archive.org]{id="https://archive.org/details/cd-01_202304"}. It's not piracy if it's on there, right?
 
 ## Unpacking the Image
 
-The Game came as a set of 3 files, a `.ccd`, a `.cue` and a `.img` file. Those are apparently produced by the old :link[CloneCD Program]{id="https://en.wikipedia.org/wiki/CloneCD"} and contain the raw data from the disk plus additional out-of-band information such as track information. Games from that time often came with Audio tracks on them as well so you could just pop these CDs into a CD player and listen to the soundtrack or other bundled media.
+The game came as a set of three files: a `.ccd`, a `.cue` and a `.img` file. Those are apparently produced by the old :link[CloneCD program]{id="https://en.wikipedia.org/wiki/CloneCD"} and contain the raw data from the disc, plus additional out-of-band information such as track metadata. Games from that time often came with audio tracks as well, so you could just pop these CDs into a CD player and listen to the soundtrack or other bundled media.
 
-Looking at the `.cue` file shows that there's a <TechnicalTerm client:load term="MODE1 track">These are Tracks meant for storing regular data such as a file system. They are usually skipped by Audio players</TechnicalTerm> at the start containing the game files and then seemingly 3 `AUDIO` tracks after that:
+Looking at the `.cue` file shows that there's a <TechnicalTerm client:load term="MODE1 track">These are tracks meant for storing regular data, such as a file system. They are usually skipped by audio players.</TechnicalTerm> at the start containing the game files, followed by four `AUDIO` tracks:
 
 ```cue title="CD01.cue"
 FILE "CD01.img" BINARY
@@ -46,7 +46,7 @@ FILE "CD01.img" BINARY
    INDEX 1 47:11:58
 ```
 
-To be able to access the data, I just used the old `ccd2iso` tool which failed when it hit the first `AUDIO` track but was still able to convert the start of the file into a regular ISO that can be mounted.
+To access the data, I just used the old `ccd2iso` tool, which failed when it hit the first `AUDIO` track but was still able to convert the start of the file into a regular ISO that could be mounted.
 
 # Copy Protection 1
 
@@ -54,22 +54,22 @@ Mounting the file and trying to copy the data over, I ran into what I believe to
 
 <Figure src={import("assets/duplicate_files.png")} alt="Duplicate files popup while extracting the archive"/>
 
-Some of the files seem to be in the disk image multiple times. Once as the real copy and once as a second copy that was either 0 bytes or 256 bytes long and contained random garbage. 
-My guess is that they did that on purpose to trick some tools to only display the fake decoy copy of the file instead of the real one. Since most older media like magnetic tape or CDs couldn't really be rewritten, the data format they use has the ability to overwrite earlier records with new data that comes later on by just appending to the data. `.tar` archives also still work that way!
+Some of the files seem to be in the disk image multiple times: once as the real copy and once as a second copy that was either 0 bytes or 256 bytes long and contained random garbage.
+My guess is that they did that on purpose to trick some tools into displaying only the fake decoy copy of the file instead of the real one by creating deliberately malformed directory entries on the disk. Windows seems to be able to always read the correct file here (otherwise it wouldn't work there either of course) but with the different tools I tried, each one of them showed a different combination of files in the end.
 
-Using a combination of `PeaZip`, `Ark`, `Dolphin` and `7z`, I ultimately managed to extract the right files from the iso but it was mostly manual labour of choosing the files that were the right size and skipping the decoy ones.
+Using a combination of `PeaZip`, `Ark`, `Dolphin` and `7z`, I ultimately managed to extract the right files from the ISO, but it was mostly manual labour: choosing the files that were the right size and skipping the decoy ones.
 
-<Figure src={import("assets/extracted_files.png")} alt="Final files that were extracted from the iso image"/>
+<Figure src={import("assets/extracted_files.png")} alt="Final files that were extracted from the ISO image"/>
 
-At this point, just running the installer felt the easiest and surprisingly just worked. I ran it using `WINEPREFIX=$(pwd)/prefix wine "Installiere Findus4.exe"` to make it install into a separate WINE prefix from which I could just copy the installed data out of afterwards.
+At this point, just running the installer seemed easiest, and it surprisingly worked. I ran it using `WINEPREFIX=$(pwd)/prefix wine "Installiere Findus4.exe"` to make it install into a separate Wine prefix, from which I could copy the installed data afterwards.
 
-# Copy Protection 2 - Elecric Boogaloo
+# Copy Protection 2 - Electric Boogaloo
 
-Executing the `Findus4.exe` now of course didn't just work but instead showed a nice error popup that I'm missing the CD.
+Executing `Findus4.exe` now, of course, didn't just work, but instead showed a nice error popup saying that the CD was missing.
 
 <Figure src={import("assets/missing_cd.png")} alt="Missing CD Error popup"/>
 
-Simply `grep`ping for that message using `rg -a "Lege die CD"` showed that they just read that message from the `Pettson3.ini` file. _They apparently didn't even bother renaming that file from the previous game._
+Simply searching for that message using `rg -a "Lege die CD"` showed that they just read it from the `Pettson3.ini` file. _They apparently didn't even bother renaming that file from the previous game._
 
 ```ini title="Pettson3.ini"
 [CDROM]
@@ -82,16 +82,16 @@ MESSG=Lege die CD Findus4 ein und versuche es noch einmal.
 FULLSCREEN=1
 ```
 
-`grep`ping for a few strings ultimately led to `messg` being found in `Findus4.exe`. First instinct was of course to just throw the binary into Ghidra and start looking for it. Surprisingly, the string didn't show up anywhere there using the `Search -> For Strings...` option which usually means that the string isn't actually part of the PE data but some sort of extra payload that was appended to the end of the executable file.
+Searching for a few strings ultimately led to `messg` being found in `Findus4.exe`. My first instinct was, of course, to just throw the binary into Ghidra and start looking for it. Surprisingly, the string didn't show up anywhere using the `Search -> For Strings...` option, which usually means that the string isn't actually part of the PE data but some sort of extra payload appended to the end of the executable file.
 
-## Extracting the embedded script
+## Extracting the Embedded Script
 
-After some more digging I found that these games are all `Macromedia Director Projector` executables. These are executables that were generated by Macromedia Director and basically contain the whole runtime for interpreting director files and have a .dxr file `cat`ted onto the end of the file which is what gets executed when the program runs. It made sense that the CD check would be part of that embedded director file because why would the runtime read from a config file called `Pettson3.ini`.
+After some more digging, I found that these games are all `Macromedia Director Projector` executables. These were generated by Macromedia Director and basically contain the whole runtime for interpreting Director files, with a `.dxr` file concatenated onto the end. That file is what gets executed when the program runs. It made sense that the CD check would be part of the embedded Director file, because why would the runtime read from a config file called `Pettson3.ini`?
 
-During my research, I stumbled over :link[ProjectorRays]{#ProjectorRays/ProjectorRays} which is a disassembler and decompiler for exactly these files. They have the file signature `RIFX` or `XFIR`, depending on the endianness of the target system, which makes them pretty easy to identify. Using ImHex, I found a few occurrences of those strings in the binary. From the source code of ProjectorRays, the format of these dxr files starts with something like this:
+During my research, I stumbled across :link[ProjectorRays]{id="https://github.com/ProjectorRays/ProjectorRays"}, which is a disassembler and decompiler for exactly these files. They have the file signature `RIFX` or `XFIR`, depending on the endianness of the target system, which makes them pretty easy to identify. Using ImHex, I found a few occurrences of those strings in the binary. Based on the ProjectorRays source code, the format of these `.dxr` files starts with something like this:
 
 ```pl title="director.hexpat"
-enum Codec : u32 {
+enum RifxType : u32 {
     MV93 = le u32("MV93"),
     MV95 = le u32("MV95"),
     FGDM = le u32("FGDM"),
@@ -101,7 +101,7 @@ enum Codec : u32 {
 
 struct Content {
     type::Size<u32> length;
-    Codec codec;
+    RifxType type;
 
     // ...
 };
@@ -117,13 +117,13 @@ struct DirectorFile {
 };
 ```
 
-Only two of `XFIR` occurrences had a valid Codec after them: One being `APPL` at address `0x00222151` which looks like a Apple Macintosh-specific script, and one being `MV93` at address `0x002222F0` which seems to be the common script. 
+Only two of the `XFIR` occurrences had a valid type after them: one was `APPL` at address `0x00222151`, which, according to ScummVM, identifies a Director application wrapper (the executable file we are working with), and the other was `MV93` at address `0x002222F0`, which seems to be the regular, uncompressed Director movie script.
 
-I initially tried to copy out that chunk from the executable and process it separately using ProjectorRays but it turned out that all the offsets used inside of the appended file are absolute so they were adjusted to work with the dxr file not starting at the beginning at the file. Instead, I ended up hacking in a `--offset` option into the CLI that lets you seek forward to the actual offset of the embedded binary. (PR can be found here in case it's useful to somebody else: :link[ProjectorRays#63]{id="https://github.com/ProjectorRays/ProjectorRays/pull/63"}).
+I initially tried to copy that chunk out of the executable and process it separately using ProjectorRays, but it turned out that all the offsets used inside the appended file are absolute and account for the `.dxr` file not starting at the beginning of the executable. Instead, I ended up adding an `--offset` option to the CLI that lets you seek forward to the actual offset of the embedded binary. The PR can be found here in case it's useful to somebody else: :link[ProjectorRays#63]{id="https://github.com/ProjectorRays/ProjectorRays/pull/63"}.
 
 ## Disassembling the Director File
 
-Finally, after all this trouble using the following command we can dump the embedded director file's content. 
+Finally, after all this trouble, we can dump the embedded Director file's contents using the following command.
 
 ```sh frame="terminal"
 ./projectorrays decompile Findus4.exe -o output --dump-scripts --offset 0x002222F0
@@ -137,13 +137,13 @@ output
 └── Findus4.dir
 ```
 
-To my surprise, this generated both a disassembly file (the .lasm file) **and** a decompiled version of the script (the .ls file) which still contains all the original function and variable names! 
+To my surprise, this generated both a disassembly file (the `.lasm` file) **and** a decompiled version of the script (the `.ls` file), which still contains all the original function and variable names!
 
 <Figure src={import("assets/decompiled_script.png")} alt="Decompiled Director Script"/>
 
-## Analyzing the script
+## Analyzing the Script
 
-The generated file is only around 150 lines long and contains the init logic of the game. It's written in a programming language called :link[Lingo]{id="https://en.wikipedia.org/wiki/Lingo_(programming_language)"} which is what Macromedia Director uses. Even without knowing the language, it's pretty straight-forward to read. It didn't take long to find the function where that `"messg"` string originally came from. As seen here, they implemented a primitive `.ini` file parser here to parse the `Pettson3.ini` file and get a few config values out of it, one being the error message displayed when no CD can be found.
+The generated file is only around 150 lines long and contains the game's initialization logic. It's written in a programming language called :link[Lingo]{id="https://en.wikipedia.org/wiki/Lingo_(programming_language)"}, which is what Macromedia Director uses. Even without knowing the language, it's pretty straightforward to read. It didn't take long to find the function from which that `"messg"` string originally came. As seen here, they implemented a primitive `.ini` file parser to parse the `Pettson3.ini` file and get a few config values out of it, one being the error message displayed when no CD can be found.
 
 ```Lingo title="MovieScript 1.lasm"
 -- ...
@@ -177,7 +177,7 @@ end
 ```
 
 <NotePanel type="idea">
-I always find it super fun to read these old scripts and look at the weird mix of broken english, identifiers written in foreign languages (Norwegian in this case I think?) and probably extremely buggy code
+I always find it super fun to read these old scripts and look at the weird mix of broken English, identifiers written in foreign languages (Swedish in this case, I think?) and probably extremely buggy code.
 </NotePanel>
 
 A bit further down, we can also find the function where the error text is actually being used:
@@ -218,21 +218,21 @@ end if
 -- ...
 ```
 
-Again, pretty straight forward code. They just loop over all possible Windows Drives, trying to find one that contains a CD-ROM with the `p3media` folder on it. If that is found, the search paths are setup, otherwise the error message we saw is displayed and the game calls `quit()`.
+Again, pretty straightforward code. They just loop over all possible Windows drives, trying to find one that contains a CD-ROM with the `p3media` folder on it. If one is found, the search paths are set up. Otherwise, the error message we saw is displayed and the game calls `quit()`.
 
-## Patching the script
+## Patching the Script
 
-Analyzing the `setSearchPaths` function a bit, I figured the easiest way avoid the `quit()` branch being executed while still allowing it to setup the search paths correctly would be to patch the `if` there to just jump to the next instruction instead of to the `else` branch if the check failed. That would result in the CD paths being a bit weird but I figured it would probably still work since the game lets you do a "Full Install" where it copies all the required data to the hard disk and presumably also loads the files from there then.
+Analyzing the `setSearchPaths` function a bit, I figured the easiest way to avoid executing the `quit()` branch while still allowing it to set up the search paths correctly would be to patch the `if` to jump to the next instruction instead of the `else` branch if the check failed. That would result in the CD paths being a bit weird, but I figured it would probably still work, since the game lets you do a "Full Install" where it copies all the required data to the hard disk and presumably loads the files from there.
 
-In the assembly file, the instructions we want to patch are these here:
+In the assembly file, the instructions we want to patch are the following:
 ```sh frame="code" title="MovieScript 1.lasm"
 < 95 00 60       > [246] jmpifz [342] ......... if not voidp(driveletter) then / else
 < 4C 08          > [249] getlocal 8 ........... <ini>
 ```
 
-ProjectorRays sadly doesn't yet support assembling the code back but thankfully, the Lingo bytecode is incredibly simple so we can do it manually with ImHex. Every instruction starts with a single opcode byte, followed by a big endian integer that's either 1, 2 or 4 bytes long. To make the manual patching a bit easier for me, I made ProjectorRays also output the bytes each of the instructions are made up of to the file (also PRd back to ProjectorRays).
+ProjectorRays sadly doesn't yet support assembling the code back, but thankfully, the Lingo bytecode is incredibly simple, so we can do it manually with ImHex. Every instruction starts with a single opcode byte, followed by a big-endian integer that's either 1, 2 or 4 bytes long. To make the manual patching a bit easier, I also made ProjectorRays output the bytes that make up each instruction (also submitted upstream to ProjectorRays).
 
-Now for the patching, `jmpifz` has the opcode byte `0x95` followed by a big endian 16 bit relative offset `0x0060 / 96` of where to jump to. So to simply jump to the next instruction, we need to jump 3 bytes forward (from offset 246 to offset 249) so we want to patch the instruction bytes to be `< 95 00 03       >`. Searching for the original byte sequence yielded only a single result which I overwrote with the new instruction.
+Now for the patching: `jmpifz` has the opcode byte `0x95`, followed by the big-endian 16-bit relative offset `0x0060`, or 96 bytes, indicating where to jump. To simply jump to the next instruction, we need to jump 3 bytes forward (from offset 246 to offset 249), so we want to patch the instruction bytes to be `< 95 00 03       >`. Searching for the original byte sequence yielded only a single result at address `0x002252E8`, which I overwrote with the new instruction.
 
 And with that, the game's intro video was playing! 🎉
 
@@ -244,7 +244,7 @@ Sadly, there was more to it.
 
 <Figure src={import("assets/copy_protection.png")} alt="disappointment2.png"/>
 
-Again, simply `grep`ping for that string yielded two results and I decided to start with `intro.dxr` for now
+Again, simply searching for that string yielded two results, and I decided to start with `intro.dxr` for now.
 
 ```sh frame="terminal" title="Grepping Error Message 2"
 ➜  rg -a 'Disc Error !'  
@@ -256,9 +256,9 @@ P3media/huset.dxr
 ...
 ```
 
-Throwing it into ProjectorRays again resulted in a few more scripts out of which one was pretty straight-forwardly called `BehaviorScript 36 - Call Copy-X CD protection DLL (OPTGRAPH.DLL).ls`. _I didn't need that much handholding, devs, but thanks either way._
+Throwing it into ProjectorRays again resulted in a few more scripts, one of which was straightforwardly called `BehaviorScript 36 - Call Copy-X CD protection DLL (OPTGRAPH.DLL).ls`. _I didn't need that much handholding, devs, but thanks either way._
 
-Inside was, like the file name described, some code that loads the `optgraph.dll` that exists next to the game executable and calls the `initdisplay()` function inside of it. It then checks that the return value of that function and if it doesn't match some magic value, the game is once again aborted.
+Inside was, as the filename suggested, some code that loads the `optgraph.dll` located next to the game executable and calls its `initdisplay()` function. It then checks the return value of that function, and if it doesn't match some magic value, the game is once again aborted.
 
 ```Lingo title="BehaviorScript 36 - Call Copy-X CD protection DLL (OPTGRAPH.DLL).ls"
 on exitFrame me
@@ -278,15 +278,15 @@ on exitFrame me
 end
 ```
 
-Interesting to note here is, they didn't even bother implementing the copy protection for Mac...
+Interestingly, they didn't even bother implementing the copy protection for Mac...
 
-To get past this check now, we have a few options. We could make the game believe that it's running on a Mac, we could patch the compare against the magic number or we could even just patch the dll to make it always return that constant. Seeing that the identical check is implemented again in `huset.dxr` and I didn't really want to RE the runtime and patch the platform detection, I decided to instead patch `optgraph.dll`.
+To get past this check, we have a few options. We could make the game believe that it's running on a Mac, patch the comparison against the magic number or patch the DLL to make it always return that constant. Given that the identical check is implemented again in `huset.dxr` and that I didn't really want to reverse engineer the runtime and patch the platform detection, I decided to patch `optgraph.dll` instead.
 
-## Patching the support dll
+## Patching the Support DLL
 
-Opening the dll in Ghidra showed that it essentially only contained that one function and nothing else. 
+Opening the DLL in Ghidra showed that it essentially contained only that one function and nothing else.
 
-`initdisplay()` itself is a bit of a convoluted mess where they send a bunch of low level commands to the CD Drive itself to somehow construct that magic value from it.
+`initdisplay()` itself is a bit of a convoluted mess where they send a bunch of low-level commands to the CD drive to somehow construct that magic value from it.
 
 ```c title="Ghidra Decompile - OPTGRAPH.DLL"
 // ...
@@ -324,14 +324,14 @@ I didn't spend too much time reversing any of this but instead just used Ghidra'
 10001068 00              ??         00h
 ```
 
-After struggling for an embarrassingly long time to get Ghidra to properly export the dll back out again, I finally managed to do it through `File -> Export -> Original File`.
+After struggling for an embarrassingly long time to get Ghidra to properly export the DLL again, I finally managed to do it through `File -> Export -> Original File`.
 
-This seemed to have been the last thing needed since the game is getting all the way to the menu screen now!
+This seemed to have been the last thing needed, since the game now gets all the way to the menu screen!
 
 <Figure src={import("assets/start_menu.png")} alt="Start menu screen of the game"/>
 
-# Wrapping up
+# Wrapping Up
 
-After spending the evening playing through that game again, I also looked through a few other, similar games that I used to play. Turns out a surprisingly big amount of them all used Macromedia and had essentially the exact same, basic copy protection mechanism. There's sadly no easy way to make a common patch that works for all of these games but with a little bit of effort, the exact same thing can be applied to these games as well.
+After spending the evening playing through that game again, I also looked through a few other, similar games that I used to play. It turns out that a surprisingly large number of them used Macromedia and had essentially the same basic copy-protection mechanism. Sadly, there's no easy way to make a common patch that works for all of these games, but with a little bit of effort, the same process can be applied to them as well.
 
-Being able to still play these games again after over 20 years and maybe even having my future kid play them makes me really happy :) I hope this post will be able to bring the same joy to others as well!
+Being able to play these games again after over 20 years, and maybe even having my future kid play them, makes me really happy :) I hope this post can bring the same joy to others as well!
