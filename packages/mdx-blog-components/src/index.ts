@@ -9,6 +9,14 @@ export { default as Image } from './Image'
 export { default as LocalTime } from './LocalTime'
 export { default as NotePanel } from './NotePanel'
 export { default as Oscilloscope } from './Oscilloscope'
+export type {
+  OscilloscopeProps,
+  OscilloscopeSignal,
+  WaveformAnnotation,
+  WaveformPoint,
+  WaveformTransaction,
+  WaveformBreak,
+} from './Oscilloscope'
 export { default as PdfDocument } from './PdfDocument'
 export { default as PencilMarked } from './PencilMarked'
 export { default as Quote } from './Quote'

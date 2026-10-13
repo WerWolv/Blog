@@ -137,79 +137,260 @@ import LocalTime from '@/LocalTime'
 
 ## `<NotePanel />`
 
-This component creates a styled panel for notes or important information.
+This component highlights notes and supporting information with a tinted background, a compact heading, and an icon tucked into the side indent. Most types use a curved indent; warnings use a triangular icon and matching triangular indent. Each type has its own light and dark palette.
 
 <MdxPreview>
 import NotePanel from '@/NotePanel'
 
-<NotePanel type="info" title="Info">
-  This is an information.
+<NotePanel type="info" title="A note on timing">
+  <p>Signals share a timeline, but each channel can use its own sample rate.</p>
+  <p>Keep annotations in the same time units as the capture so values and transitions line up.</p>
 </NotePanel>
-<br/>
-<NotePanel type="note" title="Note">
-  This is a note.
+<NotePanel type="note" title="Implementation detail">
+  The <code>note</code> type uses the same styling as <code>info</code>.
 </NotePanel>
-<br/>
-<NotePanel type="hint" title="Hint">
-  This is a hint.
+<NotePanel type="hint" title="Before you start">
+  <ul>
+    <li>Give each signal a descriptive name.</li>
+    <li>Mark the fields that matter with annotations.</li>
+    <li>Skip long idle periods when they add no useful context.</li>
+  </ul>
 </NotePanel>
-<br/>
-<NotePanel type="alert" title="Alert">
-  This is an alert.
+<NotePanel type="alert" title="Check the voltage levels">
+  A digital high is a logic state, not necessarily a 3.3 V signal. Check the device's electrical characteristics before connecting it.
 </NotePanel>
-<br/>
-<NotePanel type="idea" title="Idea">
-  This is an idea.
+<NotePanel type="idea" title="Try a decoded view">
+  A bus waveform can show an entire address or byte in one cell, making packet structure easier to follow.
 </NotePanel>
-<br/>
-<NotePanel type="boom" title="Boom">
-  Something blew up.
+<NotePanel type="boom" title="Something went wrong">
+  The receiver rejected the packet. Inspect the address, payload, and acknowledgement before retrying.
 </NotePanel>
-<br/>
-<NotePanel type="time" title="Time">
-  This will take some time.
+<NotePanel type="time" title="Allow a little settling time">
+  Wait for the input to stabilize before sampling the next value.
 </NotePanel>
-<br/>
-<NotePanel type="link" title="Link">
-  Take a look somewhere else.
+<NotePanel type="link" title="Related reading">
+  See the <a href="/blog/file_format_reverse_engineering/">file format reverse engineering guide</a> for another worked example.
 </NotePanel>
 </MdxPreview>
 
 ## `<Oscilloscope client:load />`
 
-This component renders digital signal waveforms, useful for visualizing binary data or timing diagrams.
+import Oscilloscope from '@/Oscilloscope'
+
+Named analog, digital, and decoded bus signals share a timeline, with a separate scale for each analog channel. Each signal contains its own `data`, so there are no separate channel arrays to keep in sync. Colors are assigned automatically, or can be set with `color`.
 
 ```mdx
 import Oscilloscope from '@/Oscilloscope'
-
-<Oscilloscope client:load
-  signals={[
-    { name: 'CLK', color: 'blue' },
-    { name: 'DATA', color: 'green' },
-    { name: 'EN', color: 'red' },
-  ]}
-  channelData={[
-    [0, 0, 1, 0, 1, 0, 1, 0, 1, 0], // Clock signal
-    [0, 0, 0, 1, 0, 1, 0, 1, 1, 0], // Data signal
-    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0], // Enable signal
-  ]}
-/>
 ```
 
-import Oscilloscope from '@/Oscilloscope'
+### Digital signals and decoded packets
 
+Digital signals accept arrays of `0` / `1` or a bit string (spaces are ignored). Enable `showValues` to label individual samples. Add `annotations` to a signal for decoded fields such as `0xAB` and `ACK`, or to the component to mark events across all channels.
+
+<MdxPreview>
 <Oscilloscope client:load
-  signals={[
-    { name: 'CLK', color: 'blue' },
-    { name: 'DATA', color: 'green' },
-    { name: 'EN', color: 'red' },
+  title="Serial transfer · 0xAB"
+  showValues
+  annotations={[
+    { start: 0, end: 1, label: 'START' },
+    { start: 10, label: 'STOP' },
   ]}
-  channelData={[
-    [0, 0, 1, 0, 1, 0, 1, 0, 1, 0], // Clock signal
-    [0, 0, 0, 1, 0, 1, 0, 1, 1, 0], // Data signal
-    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0], // Enable signal
+  signals={[
+    {
+      name: 'CLK',
+      sampleRate: 2,
+      showValues: false,
+      data: '10 10 10 10 10 10 10 10 10 10 11',
+    },
+    {
+      name: 'DATA',
+      data: '0 1 0 1 0 1 0 1 1 0 1',
+      annotations: [
+        { start: 1, end: 9, label: '0xAB' },
+        { start: 9, end: 10, label: 'ACK' },
+      ],
+    },
+    {
+      name: 'ENABLE',
+      data: '11111111110',
+      annotations: [{ start: 0, end: 10, label: 'Transaction active' }],
+    },
   ]}
 />
+</MdxPreview>
+
+By default, each sample occupies one timeline unit. `sampleRate` sets the number of samples per unit (globally or per signal) and `timeUnit` sets the axis label. Annotation `start` and `end` use those same units; `end` is exclusive. Omit `end` for a point marker. Labels are independent of the underlying samples.
+
+### Edge-triggered signals
+
+Set `edgeArrows` on a digital channel to `'rising'`, `'falling'`, or `'both'` to mark its transitions with upward or downward arrows. Pass an array of timeline times to mark only specific edges; the direction is inferred from the waveform.
+
+Set `activeLow: true` to draw a bar over a channel's name, as shown on `LATCH` below. The name retains its original text and the waveform retains its recorded levels.
+
+<MdxPreview>
+<Oscilloscope client:load
+  title="Edge-triggered sampling"
+  signals={[
+    {
+      name: 'CLK',
+      data: '01010101',
+      edgeArrows: 'rising',
+    },
+    {
+      name: 'LATCH',
+      activeLow: true,
+      data: '11101110',
+      edgeArrows: 'falling',
+    },
+    {
+      name: 'IRQ',
+      data: '00110011',
+      edgeArrows: [2, 6],
+    },
+  ]}
+/>
+</MdxPreview>
+
+Arrows mark actual transitions between known samples. An initial high value or a transition across a `null` gap does not imply an edge. Edges inside a skipped interval are hidden. Hover over an arrow to see its direction and time.
+
+### Opaque bus transactions
+
+Use `type: 'bus'` to show a complete value in one waveform cell instead of spelling it out as bits. Strings are displayed as written; non-negative integer values are displayed in hexadecimal. For equally spaced transactions, use `data: ['START', '0x50 W', 'ACK', 0xAB, 'ACK', 'STOP']`. Each entry occupies one sample interval, and `null` leaves a gap.
+
+Use `{ start, end, value }` objects when fields have different durations. This I2C example shows the address and byte as opaque values alongside a digital signal:
+
+<MdxPreview>
+<Oscilloscope client:load
+  title="I2C write · decoded fields"
+  timeUnit="µs"
+  duration={25}
+  signals={[
+    {
+      name: 'SDA',
+      type: 'bus',
+      data: [
+        { start: 0, end: 3, value: 'START' },
+        { start: 3, end: 11, value: '0x50 W' },
+        { start: 11, end: 14, value: 'ACK' },
+        { start: 14, end: 22, value: 0xAB },
+        { start: 22, end: 25, value: 'ACK' },
+      ],
+      annotations: [
+        { start: 3, end: 11, label: 'Address + write' },
+        { start: 14, end: 22, label: 'Data byte' },
+      ],
+    },
+    {
+      name: 'BUSY',
+      data: [
+        { time: 0, value: 1 },
+        { time: 24, value: 0 },
+        { time: 25, value: 0 },
+      ],
+    },
+  ]}
+/>
+</MdxPreview>
+
+Bus values are always labeled. Long values are shortened to fit their cells without compressing the text; hover over a cell to see the full value and time range. Bus channels can be mixed with analog and digital channels on the same timeline.
+
+### Mixed analog and digital signals
+
+Set `type="analog"` on a signal for a linearly interpolated waveform. Analog scales are inferred from the values, or fixed with `min`, `max`, and `unit`. Use `{ time, value }` points for irregular sampling or transitions at exact times. `null` values leave gaps rather than implying a zero.
+
+<MdxPreview>
+<Oscilloscope client:load
+  title="Comparator with hysteresis"
+  timeUnit="ms"
+  duration={8}
+  annotations={[{ start: 3.5, end: 4.5, label: 'Input peak' }]}
+  signals={[
+    {
+      name: 'INPUT',
+      type: 'analog',
+      min: 0,
+      max: 3.3,
+      unit: 'V',
+      data: [0.3, 0.6, 1.2, 2.1, 3.0, 2.5, 1.5, 0.7, 0.3],
+      annotations: [{ start: 3, label: '2.1 V' }],
+    },
+    {
+      name: 'OUTPUT',
+      type: 'digital',
+      data: [
+        { time: 0, value: 0 },
+        { time: 2.5, value: 1 },
+        { time: 6.5, value: 0 },
+        { time: 8, value: 0 },
+      ],
+      annotations: [
+        { start: 0, end: 2.5, label: 'LOW' },
+        { start: 2.5, end: 6.5, label: 'HIGH' },
+        { start: 6.5, end: 8, label: 'LOW' },
+      ],
+    },
+  ]}
+/>
+</MdxPreview>
+
+The timeline length is inferred from the longest signal. Set `duration` to show a specific time window. Digital samples use step transitions and include their final sample interval; analog traces end at their last point. Dotted continuations extend from the recorded waveform to the plot edges to mark undetermined regions. The channel panel sizes itself to fit its labels with a small padding. On narrow screens, the timeline scrolls horizontally while channel names and Y-axis scales stay fixed. The time-unit label stays visible at the lower-right of the axis. A small gap at each end keeps waveform boundaries visible; the panel background and axis lines extend across the full panel, while annotation shading only covers each annotated interval.
+
+### Skipping uninteresting time ranges
+
+Use `breaks` to compress idle or repetitive intervals. Each `{ start, end }` range is replaced by a narrow double-slash gap on every channel and a dotted segment on the time axis. Dotted bus lines also connect transaction blocks across undetermined intervals. The displayed times remain the original capture times, and all channels stay aligned.
+
+<MdxPreview>
+<Oscilloscope client:load
+  title="Two bursts with idle time omitted"
+  timeUnit="ms"
+  duration={100}
+  breaks={[{ start: 5, end: 95 }]}
+  annotations={[
+    { start: 0, end: 5, label: 'First burst' },
+    { start: 95, end: 100, label: 'Second burst' },
+  ]}
+  signals={[
+    {
+      name: 'INPUT',
+      type: 'analog',
+      min: 0,
+      max: 3.3,
+      unit: 'V',
+      data: [
+        { time: 0, value: 0.2 },
+        { time: 1, value: 2.8 },
+        { time: 3, value: 1.6 },
+        { time: 5, value: 0.2 },
+        { time: 95, value: 0.2 },
+        { time: 96, value: 3.1 },
+        { time: 98, value: 1.8 },
+        { time: 100, value: 0.2 },
+      ],
+    },
+    {
+      name: 'ENABLE',
+      data: [
+        { time: 0, value: 0 },
+        { time: 1, value: 1 },
+        { time: 4, value: 0 },
+        { time: 96, value: 1 },
+        { time: 99, value: 0 },
+        { time: 100, value: 0 },
+      ],
+    },
+    {
+      name: 'DATA',
+      type: 'bus',
+      data: [
+        { start: 1, end: 4, value: 0xAB },
+        { start: 96, end: 99, value: 0xCD },
+      ],
+    },
+  ]}
+/>
+</MdxPreview>
+
+Breaks use the same units as samples and annotations, and may contain data—the data inside a break is deliberately hidden. Overlapping ranges are merged. Unlike a `null` sample, which leaves a gap at its original width, a break removes that time from the displayed scale. Hover over the slashes to see the omitted interval.
 
 ## `<PdfDocument />`
 
@@ -279,17 +460,32 @@ import Steps from '@/Steps'
 
 ## `<TechnicalTerm client:load />`
 
-This component highlights technical terms and can provide additional information when clicking on it.
+import TechnicalTerm from '@/TechnicalTerm'
+
+Technical terms keep a gently animated underline and open an inline definition popup when clicked. The popup has a heading, a close button, and space for formatted text and links. It stays within the viewport and flips above the term when there is more room there.
 
 ```mdx
 import TechnicalTerm from '@/TechnicalTerm'
 
-The <TechnicalTerm client:load term="CPU" description="Central Processing Unit, the brain of the computer" /> is responsible for executing instructions in a computer.
 ```
 
-import TechnicalTerm from '@/TechnicalTerm'
+<MdxPreview>
+The <TechnicalTerm client:load term="CPU">
+  <strong>Central Processing Unit</strong>
+  <p>The processor that fetches, decodes, and executes program instructions.</p>
+  <p>A modern CPU may contain several cores, each capable of running its own instruction stream.</p>
+  <a href="https://en.wikipedia.org/wiki/Central_processing_unit">More about CPUs</a>
+</TechnicalTerm> executes the program, but it doesn't have to copy every byte itself.
+</MdxPreview>
 
-The <TechnicalTerm client:load term="CPU">**Central Processing Unit**, the brain of the computer</TechnicalTerm> is responsible for executing instructions in a computer.
+<MdxPreview>
+With <TechnicalTerm client:load term="DMA" color="#0f766e" accentColor="#0891b2">
+  <strong>Direct Memory Access</strong>
+  <p>A peripheral transfers data to or from memory without the CPU handling each byte individually.</p>
+</TechnicalTerm>, peripherals can transfer data while the CPU does other work.
+</MdxPreview>
+
+Use the keyboard to focus a term and press **Enter** or **Space** to open it. **Escape**, the close button, or clicking outside dismisses the definition. **Tab** moves into the popup's controls and links, then back into the article. Each term gets its own seeded waveform, which stays stable across re-renders. Set `seed="cpu"` (or a number) to choose a repeatable shape and animation timing. The underline remains static when reduced motion is enabled. `defaultOpen` can show a definition initially; `color` and `accentColor` customize its accent colors.
 
 ## `<Terminal client:load />`
 
