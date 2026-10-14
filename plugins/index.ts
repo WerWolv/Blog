@@ -1,5 +1,6 @@
 import { visit } from 'unist-util-visit'
 import remarkSmartypants from 'remark-smartypants'
+import remarkEmoji from 'remark-emoji'
 import remarkDirective from 'remark-directive'
 import remarkDirectiveSugar from 'remark-directive-sugar'
 import remarkImgAttr from 'remark-imgattr'
@@ -22,6 +23,7 @@ import { type CreateProperties } from 'rehype-external-links'
 
 export const remarkPlugins = [
   remarkSmartypants,
+  remarkEmoji,
   remarkDirective,
   [
     remarkDirectiveSugar,

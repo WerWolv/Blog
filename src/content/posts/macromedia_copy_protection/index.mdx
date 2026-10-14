@@ -234,7 +234,7 @@ ProjectorRays sadly doesn't yet support assembling the code back, but thankfully
 
 Now for the patching: `jmpifz` has the opcode byte `0x95`, followed by the big-endian 16-bit relative offset `0x0060`, or 96 bytes, indicating where to jump. To simply jump to the next instruction, we need to jump 3 bytes forward (from offset 246 to offset 249), so we want to patch the instruction bytes to be `< 95 00 03       >`. Searching for the original byte sequence yielded only a single result at address `0x002252E8`, which I overwrote with the new instruction.
 
-And with that, the game's intro video was playing! 🎉
+And with that, the game's intro video was playing! :tada:
 
 <Figure src={import("assets/game_starting.png")} alt="The game's intro video playing"/>
 
