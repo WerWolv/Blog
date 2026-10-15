@@ -12,13 +12,19 @@ type Props = {
   title: string
   description: string
   image?: string
+  postReader?: boolean
 }
 
-const { title, description, image }: Props = Astro.props
+const { title, description, image, postReader = false }: Props = Astro.props
 ---
 
 <!doctype html>
-<html lang={SITE.lang} transition:name="root" transition:animate={SITE.transition ? 'fade' : 'none'}>
+<html
+  lang={SITE.lang}
+  data-post-reader-page={postReader ? '' : undefined}
+  transition:name="root"
+  transition:animate={SITE.transition ? 'fade' : 'none'}
+>
   <head>
     <Head title={`${title} | ${SITE.title}`} {description} {image} />
   </head>
@@ -59,7 +65,11 @@ const { title, description, image }: Props = Astro.props
       </div>
     </div>
     <div class="grow flex pt-[65px]">
-      <main class="relative border-x border-border/50 global-layout-width mx-auto grow min-w-0">
+      <main
+        id={postReader ? 'post-reader' : undefined}
+        data-post-reader={postReader ? '' : undefined}
+        class="relative border-x border-border/50 global-layout-width mx-auto grow min-w-0"
+      >
         <slot />
       </main>
     </div>

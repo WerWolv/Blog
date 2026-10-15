@@ -46,6 +46,7 @@ const PostLayout = layoutMap[layoutKey]
 ---
 
 <Layout
+  postReader
   title={frontmatter.title}
   description={frontmatter.description || frontmatter.title}
   image={frontmatter.ogImage?.src ? `${SITE.website}${frontmatter.ogImage.src}` : SITE.ogImage}

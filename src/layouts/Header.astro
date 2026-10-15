@@ -6,6 +6,7 @@ import GradientToggle from '~/components/theme/GradientToggle.astro'
 import SectionDivider from '~/components/base/SectionDivider.astro'
 import HeaderLink from '~/components/base/HeaderLink.astro'
 import SearchSwitch from '~/components/base/SearchSwitch.astro'
+import PostWidthToggle from '~/components/posts/base/PostWidthToggle.astro'
 import { Image } from 'astro:assets'
 import favicon from '../../public/logo.png'
 ---
@@ -39,6 +40,7 @@ import favicon from '../../public/logo.png'
       <div class="flex gap-2 items-center" transition:persist="header-theme-toggle">
         <SearchSwitch />
         <span class="m-1"></span>
+        <PostWidthToggle />
         <GradientToggle />
         <ThemeToggle client:load />
       </div>
@@ -77,6 +79,14 @@ import favicon from '../../public/logo.png'
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    cleanup = () => window.removeEventListener('scroll', handleScroll)
+    function handlePostWidthChange() {
+      lastScrollY = window.scrollY
+      header!.classList.remove('-translate-y-full')
+    }
+    window.addEventListener('post-width-change', handlePostWidthChange)
+    cleanup = () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('post-width-change', handlePostWidthChange)
+    }
   })
 </script>

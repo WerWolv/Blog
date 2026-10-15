@@ -343,7 +343,10 @@ const getRelativeIndentClass = (depth: number) => {
                 if (target) {
                   const rect = target.getBoundingClientRect()
                   const documentTop = rect.top + window.scrollY
-                  const scrollPosition = documentTop - 80
+                  const headerHeight = document.getElementById('sticky-header')?.offsetHeight ?? 65
+                  const tocHeight = this.tocContainer?.querySelector<HTMLElement>('[data-toc-toggle]')?.offsetHeight ?? 45
+                  const offset = document.documentElement.hasAttribute('data-post-wide') ? headerHeight + tocHeight + 8 : 80
+                  const scrollPosition = documentTop - offset
 
                   window.scrollTo({
                     top: Math.max(0, scrollPosition),

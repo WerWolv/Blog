@@ -1,0 +1,183 @@
+<button
+  type="button"
+  class="post-width-toggle relative size-5 items-center justify-center cursor-pointer text-foreground origin-center transition-transform duration-150 ease-in-out hover:scale-105 active:scale-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+  data-post-width-toggle
+  aria-label="Expand post width"
+  aria-controls="post-reader"
+  aria-pressed="false"
+  title="Expand post width"
+>
+  <span data-post-width-expand class="absolute inset-0 icon-[lucide--maximize-2] size-5" aria-hidden="true"></span>
+  <span data-post-width-contract class="absolute inset-0 icon-[lucide--minimize-2] size-5" aria-hidden="true"></span>
+</button>
+
+<script is:inline>
+  try {
+    document.documentElement.toggleAttribute(
+      'data-post-wide',
+      document.documentElement.hasAttribute('data-post-reader-page') && localStorage.getItem('post-wide-layout') === 'true'
+    )
+  } catch {}
+</script>
+
+<style is:global>
+  .post-width-toggle {
+    display: none;
+  }
+
+  .post-width-toggle [data-post-width-expand],
+  .post-width-toggle [data-post-width-contract] {
+    display: inline-block;
+    transition: opacity 200ms ease-in-out;
+  }
+
+  .post-width-toggle [data-post-width-expand] {
+    opacity: 1;
+  }
+
+  .post-width-toggle [data-post-width-contract] {
+    opacity: 0;
+  }
+
+  [data-post-reader] {
+    width: 100%;
+  }
+
+  html[data-post-width-animating] [data-post-reader] {
+    transition: max-width 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html[data-post-width-animating] [data-post-reader] .global-layout-width,
+  html[data-post-width-animating] [data-post-content] {
+    max-width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    html[data-post-reader-page] .post-width-toggle {
+      display: inline-flex;
+    }
+  }
+
+  html[data-post-wide] [data-post-width-expand] {
+    opacity: 0;
+  }
+
+  html[data-post-wide] [data-post-width-contract] {
+    opacity: 1;
+  }
+
+  html[data-post-wide] [data-post-reader] {
+    --layout-width: 100%;
+    width: 100%;
+    max-width: 100%;
+    border-inline: 0;
+  }
+
+  html[data-post-wide] [data-post-content] {
+    max-width: none;
+  }
+
+  html[data-post-wide] [data-post-desktop-toc] {
+    display: none;
+  }
+
+  html[data-post-wide] #mobile-toc-container {
+    display: block;
+    top: 65px;
+  }
+
+  html[data-post-wide]:has(#sticky-header.-translate-y-full) #mobile-toc-container {
+    top: 0;
+  }
+
+  html[data-post-wide] [data-post-desktop-controls] {
+    right: 1.5rem;
+    bottom: 1.5rem;
+    translate: none;
+    transform: none;
+    padding: 0.25rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-width-toggle,
+    .post-width-toggle [data-post-width-expand],
+    .post-width-toggle [data-post-width-contract],
+    html[data-post-reader-page] [data-post-reader] {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  const preferenceKey = 'post-wide-layout'
+  let expanded = false
+  let animationFrame = 0
+  try {
+    expanded = localStorage.getItem(preferenceKey) === 'true'
+  } catch {}
+
+  function applyWidth(target: Document = document) {
+    const enabled = expanded && target.documentElement.hasAttribute('data-post-reader-page')
+    target.documentElement.toggleAttribute('data-post-wide', enabled)
+    target.querySelectorAll<HTMLButtonElement>('[data-post-width-toggle]').forEach((button) => {
+      const label = enabled ? 'Restore reading width' : 'Expand post width'
+      button.setAttribute('aria-pressed', String(enabled))
+      button.setAttribute('aria-label', label)
+      button.title = label
+    })
+  }
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('[data-post-width-toggle]')) return
+    const reader = document.querySelector<HTMLElement>('[data-post-reader]')
+    if (!reader) return
+
+    const visibleBlocks = Array.from(document.querySelectorAll<HTMLElement>('[data-post-content] .markdown > *'))
+      .map((element) => ({ element, bounds: element.getBoundingClientRect() }))
+      .filter(({ bounds }) => bounds.height > 0 && bounds.bottom > 80 && bounds.top < window.innerHeight)
+    const anchor = visibleBlocks.find(({ bounds }) => bounds.top >= 80) ?? visibleBlocks[0]
+
+    cancelAnimationFrame(animationFrame)
+    const root = document.documentElement
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    root.toggleAttribute('data-post-width-animating', !reducedMotion)
+    reader.getBoundingClientRect()
+
+    expanded = !root.hasAttribute('data-post-wide')
+    try {
+      localStorage.setItem(preferenceKey, String(expanded))
+    } catch {}
+    applyWidth()
+
+    const preservePosition = () => {
+      if (anchor?.element.isConnected) {
+        const adjustment = anchor.element.getBoundingClientRect().top - anchor.bounds.top
+        if (Math.abs(adjustment) > 0.5) window.scrollBy({ top: adjustment, behavior: 'instant' })
+      }
+      window.dispatchEvent(new Event('post-width-change'))
+    }
+    const finishAt = performance.now() + (reducedMotion ? 0 : 320)
+    const animate = (now: number) => {
+      if (!reader.isConnected) return
+      preservePosition()
+      if (now < finishAt) {
+        animationFrame = requestAnimationFrame(animate)
+      } else {
+        root.removeAttribute('data-post-width-animating')
+        preservePosition()
+        animationFrame = 0
+      }
+    }
+    animationFrame = requestAnimationFrame(animate)
+  })
+
+  document.addEventListener('astro:before-swap', (event) => {
+    cancelAnimationFrame(animationFrame)
+    document.documentElement.removeAttribute('data-post-width-animating')
+    applyWidth(event.newDocument)
+  })
+  document.addEventListener('astro:page-load', () => applyWidth())
+  applyWidth()
+</script>
