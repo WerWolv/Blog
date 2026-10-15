@@ -254,7 +254,7 @@ export const POSTS_CONFIG: PostConfig = {
   introduce: 'All my posts about various subjects that interest me',
   author: 'WerWolv',
   homePageConfig: {
-    size: 5,
+    size: 7,
     type: 'image',
   },
   postPageConfig: {

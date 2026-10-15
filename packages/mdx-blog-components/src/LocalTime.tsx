@@ -25,6 +25,15 @@ function convertTime(time24h: string, fromTimezone: string): string {
   return `${localHours.toString().padStart(2, '0')}:${localMinutesRemainder.toString().padStart(2, '0')}`
 }
 
+function getTimezoneAbbreviation(timeZone: string, date: Date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    timeZoneName: 'short',
+  })
+
+  return formatter.formatToParts(date).find((part) => part.type === 'timeZoneName')?.value ?? timeZone
+}
+
 export default function LocalTime({ time24h, fromTimezone }: { time24h: string; fromTimezone: string }) {
-  return <span>{convertTime(time24h, fromTimezone)}</span>
+  return <span title={time24h + ' ' + getTimezoneAbbreviation(fromTimezone)}>{convertTime(time24h, fromTimezone)}</span>
 }
