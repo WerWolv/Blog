@@ -1,6 +1,7 @@
 ---
 import { cn } from '~/lib/utils'
 import type { SkillData, Skill } from '~/types'
+import { Image } from 'astro:assets'
 
 interface Props {
   skillsData: SkillData[]
@@ -39,13 +40,9 @@ const duplicateSkills = (skills: Skill[]) => [...skills, ...skills, ...skills, .
                       if (typeof skill.icon === 'string' && skill.icon.startsWith('icon-')) {
                         return <span class={cn('flex items-center justify-center w-5 h-5', skill.icon)} />
                       } else {
-                        return (
-                          <img
-                            class={cn('flex items-center justify-center w-5 h-5')}
-                            src={(skill.icon as ImageMetadata).src}
-                            alt={skill.name}
-                          />
-                        )
+                        const imageProps =
+                          typeof skill.icon === 'string' ? { src: skill.icon, width: 20, height: 20 } : { src: skill.icon, width: 20 }
+                        return <Image class={cn('flex items-center justify-center w-5 h-5')} {...imageProps} alt={skill.name} />
                       }
                     }}
                     <span class="font-sans text-sm font-medium">{skill.name}</span>

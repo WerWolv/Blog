@@ -1,10 +1,10 @@
+import { getImage } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+
+type ResolvedImageSource = string | ImageMetadata | { src: string; width?: number; height?: number }
+
 export type ImageSource =
-  | string
-  | { src: string; width?: number; height?: number }
-  | { default: string | { src: string; width?: number; height?: number } }
-  | Promise<
-      string | { src: string; width?: number; height?: number } | { default: string | { src: string; width?: number; height?: number } }
-    >
+  ResolvedImageSource | { default: ResolvedImageSource } | Promise<ResolvedImageSource | { default: ResolvedImageSource }>
 
 type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   src: ImageSource
@@ -20,9 +20,9 @@ function normalizeDimension(value: unknown): number | undefined {
   return undefined
 }
 
-function resolveSrcValue(value: unknown): { src: string; width?: number; height?: number } {
+function resolveSrcValue(value: unknown): ResolvedImageSource {
   if (typeof value === 'string') {
-    return { src: value }
+    return value
   }
 
   if (!value || typeof value !== 'object') {
@@ -34,11 +34,8 @@ function resolveSrcValue(value: unknown): { src: string; width?: number; height?
   }
 
   if ('src' in value && typeof (value as { src: unknown }).src === 'string') {
-    return {
-      src: (value as { src: string }).src,
-      width: normalizeDimension((value as { width?: unknown }).width),
-      height: normalizeDimension((value as { height?: unknown }).height),
-    }
+    // Preserve imported metadata (including Astro's internal file reference).
+    return value as Exclude<ResolvedImageSource, string>
   }
 
   throw new Error('Image source must be a string or an object with a src field.')
@@ -50,16 +47,25 @@ export default async function Image({ src, class: classProp, className, alt, wid
   }
 
   const resolved = resolveSrcValue(await Promise.resolve(src))
+  const metadata = typeof resolved === 'object' && 'format' in resolved ? resolved : undefined
+  const source = metadata ?? (typeof resolved === 'string' ? resolved : resolved.src)
+  // Let Astro infer the other dimension for imports when only one is specified.
+  const dimensions = !metadata && typeof resolved === 'object' ? resolved : undefined
+  const image = await getImage({
+    src: source,
+    width: normalizeDimension(width) ?? dimensions?.width,
+    height: normalizeDimension(height) ?? dimensions?.height,
+  })
   const finalClassName = className ?? classProp
 
   return (
     <img
-      src={resolved.src}
-      alt={alt}
-      width={normalizeDimension(width) ?? resolved.width}
-      height={normalizeDimension(height) ?? resolved.height}
-      className={finalClassName}
+      {...image.attributes}
       {...attributes}
+      src={image.src}
+      srcSet={image.srcSet.attribute || attributes.srcSet}
+      alt={alt}
+      className={finalClassName}
     />
   )
 }

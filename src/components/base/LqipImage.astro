@@ -18,7 +18,7 @@ const lqipStyle = lqip ? `--lqip:${lqip}` : ''
 const finalStyle = style ? `${style};${lqipStyle}` : lqipStyle
 ---
 
-<Image {src} {alt} data-zoom style={finalStyle || undefined} {...rest} />
+<Image {src} {alt} data-zoom priority style={finalStyle || undefined} {...rest} />
 
 <!-- <script>
   import mediumZoom from 'medium-zoom/dist/pure'
