@@ -6,6 +6,10 @@ export function cn(...classes: ClassValue[]) {
   return twMerge(clsx(classes))
 }
 
+export function getTagUrl(tag: string) {
+  return `/tags/${encodeURI(tag).replace(/#/g, '%23').replace(/\?/g, '%3F')}`
+}
+
 // 文章按时间排序
 export function postsSort(posts: CollectionEntry<'posts'>[]) {
   return posts.slice().sort((a, b) => {

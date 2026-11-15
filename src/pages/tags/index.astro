@@ -4,6 +4,7 @@ import { TAGS_CONFIG } from '~/config'
 import Layout from '~/layouts/Layout.astro'
 import { getAllPosts } from '~/lib/data'
 import { getAllTags } from '~/lib/data'
+import { getTagUrl } from '~/lib/utils'
 
 const { title, description, introduce } = TAGS_CONFIG
 
@@ -47,7 +48,7 @@ const maxCount = Math.max(...sortedTags.map((t) => t.count))
 
           return (
             <a
-              href={`/tags/${tag.name}`}
+              href={getTagUrl(tag.name)}
               class={`group relative block p-4 rounded-lg bg-background border border-border/40 hover:border-border hover:bg-muted/30 transition-all duration-200 ${priorityClass}`}
             >
               <div class="flex items-center justify-between">
